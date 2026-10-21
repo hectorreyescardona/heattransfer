@@ -1,4 +1,0 @@
-class HeatTransfer:
-
-    def __init__(self):
-        
