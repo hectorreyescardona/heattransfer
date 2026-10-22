@@ -5,12 +5,12 @@ import Material
 class Coil:
     """Mesh for FEM"""
 
-    def init(self, 
-             material: Material,
-             inner_radius: float,
-             outer_radius: float,
-             height: float,
-             point_separation: float,
+    def __init__(self, 
+             material: Material = Material.Material(),
+             inner_radius: float = 0,
+             outer_radius: float = 0,
+             height: float = 0,
+             point_separation: float = 0,
              initial_temperature: float = 273.15,
         ):
         
@@ -22,7 +22,7 @@ class Coil:
         self.point_separation = point_separation
 
         # Check how to determine the spacing of the points. 
-        self.points = self._spacing(self)
+        self.points = self._spacing()
 
     def _volume(self):
 
@@ -41,8 +41,8 @@ class Coil:
 
         return self.initial_temperature * np.ones(
             (
-                length / h,
-                height / h,
-                depth / h
+                int(length / h),
+                int(height / h),
+                int(depth / h)
             )
         )

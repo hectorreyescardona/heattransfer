@@ -2,11 +2,11 @@ class Material:
     """Generic Material."""
 
     def __init__(self, 
-                 density:float, 
-                 emissivity: float,
-                 specific_heat: float,
-                 radial_thermal_conductivity: float,
-                 axial_thermal_conductivity: float,
+                 density:float = 0.0, 
+                 emissivity: float = 0.0,
+                 specific_heat: float = 0.0,
+                 radial_thermal_conductivity: float = 0.0,
+                 axial_thermal_conductivity: float = 0.0,
                  ):
         
         self.density = density
