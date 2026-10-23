@@ -14,6 +14,7 @@ class Furnace:
         """
         self.temperature = temperature
         self.coils = coils
-        self.convection_coefficient = 1
+        self.convection_coefficient_side = 1
+        self.convection_coefficient_top = 1
 
     

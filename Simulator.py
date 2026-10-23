@@ -20,44 +20,85 @@ class Simulator:
         coil = self.furnace.coils[0]
         radial_separation = (coil.outer_radius - coil.inner_radius) / coil.points.shape[2]
 
-        current_depth = (coordinates[2]/coil.points.shape[2]) * total_depth 
-        circumference = 2 * np.pi * current_depth
-
-        # Side of area
-        side = circumference / n_of_points_length
+        # Height separation calculation
+        height = coil.height
+        height_separation = height / coil.points.shape[1]
 
 
-        tangential_separation = 
+        heat_rate = Conduction(
+            results[coordinates[0], coordinates[1], coordinates[2] - 1,n],
+            results[coordinates[0], coordinates[1], coordinates[2],n],
+            coil.material.radial_thermal_conductivity,
+            0,
+            radial_separation
+        ).heat()
+
+        heat_rate += Conduction(
+            results[coordinates[0], coordinates[1], coordinates[2] + 1,n],
+            results[coordinates[0], coordinates[1], coordinates[2],n],
+            coil.material.radial_thermal_conductivity,
+            0,
+            radial_separation
+        ).heat()
+
+        heat_rate += Conduction(
+            results[coordinates[0], coordinates[1] - 1, coordinates[2],n],
+            results[coordinates[0], coordinates[1], coordinates[2],n],
+            coil.material.axial_thermal_conductivity,
+            0,
+            height_separation
+        ).heat()
+
+        heat_rate += Convection(
+            self.furnace.temperature,
+            results[coordinates[0], coordinates[1], coordinates[2],n],
+            self.furnace.convection_coefficient_top,
+            0
+        ).heat()
+
+        return heat_rate
 
 
-        if (coordinates[2] == 0):
-            pass
-        elif (coordinates[2] == (results.shape[0] - 1) ): 
-            pass
-        else:
-           
-            heat_rate = Conduction(
-                results[coordinates[0], coordinates[1], coordinates[2] - 1,n],
-                results[coordinates[0], coordinates[1], coordinates[2],n],
-                coil.material.radial_thermal_conductivity,
-                0,
-                radial_separation
-            ).heat()
-            heat_rate += Conduction(
-                results[coordinates[0], coordinates[1], coordinates[2] - 1,n],
-                results[coordinates[0], coordinates[1], coordinates[2],n],
-                coil.material.radial_thermal_conductivity,
-                0,
-                radial_separation
-            ).heat()
+    def _corner_region_heat_rate(self, results, coordinates, n):
+        # Edge case for the border elements 
+        coil = self.furnace.coils[0]
+        radial_separation = (coil.outer_radius - coil.inner_radius) / coil.points.shape[2]
 
-            heat_rate += Conduction(
-                results[coordinates[0], coordinates[1], coordinates[2] - 1,n],
-                results[coordinates[0], coordinates[1], coordinates[2],n],
-                coil.material.radial_thermal_conductivity,
-                0,
-                radial_separation
-            ).heat()
+        # Height separation calculation
+        height = coil.height
+        height_separation = height / coil.points.shape[1]
+
+
+        heat_rate = Conduction(
+            results[coordinates[0], coordinates[1], coordinates[2] - 1,n],
+            results[coordinates[0], coordinates[1], coordinates[2],n],
+            coil.material.radial_thermal_conductivity,
+            0,
+            radial_separation
+        ).heat()
+
+        heat_rate += Conduction(
+            results[coordinates[0], coordinates[1], coordinates[2] + 1,n],
+            results[coordinates[0], coordinates[1], coordinates[2],n],
+            coil.material.radial_thermal_conductivity,
+            0,
+            radial_separation
+        ).heat()
+
+        heat_rate += Conduction(
+            results[coordinates[0], coordinates[1] - 1, coordinates[2],n],
+            results[coordinates[0], coordinates[1], coordinates[2],n],
+            coil.material.axial_thermal_conductivity,
+            0,
+            height_separation
+        ).heat()
+
+        heat_rate += Convection(
+            self.furnace.temperature,
+            results[coordinates[0], coordinates[1], coordinates[2],n],
+            self.furnace.convection_coefficient_top,
+            0
+        ).heat()
 
         return heat_rate
 
@@ -81,10 +122,12 @@ class Simulator:
                     for k in range(depth):
 
                         # Check for outermost layer.
-                        if k == (depth - 1):
+                        if (k == (depth - 1)):
                             print("Modyfying outermost layer.")
 
                             results[i,j,k,n] = 
+
+                        elif ()
 
 
 
