@@ -12,7 +12,6 @@ class Simulator:
         self.furnace = furnace
         self.time_step = time_step
         self.simulation_time = simulation_time
-        self.dt = self.simulation_time / self.time_step
 
 
     def _top_region_heat_rate(self, results, coordinates, n):
@@ -26,35 +25,47 @@ class Simulator:
 
 
         heat_rate = Conduction(
-            results[coordinates[0], coordinates[1], coordinates[2] - 1,n],
-            results[coordinates[0], coordinates[1], coordinates[2],n],
-            coil.material.radial_thermal_conductivity,
+            results[coordinates[0], coordinates[1], max(0, coordinates[2] - 1),n - 1],
+            results[coordinates[0], coordinates[1], coordinates[2],n - 1],
+            coil.material.radial_conductivity(
+                results[tuple(coordinates) + (n - 1,)],
+                self.furnace.temperature_at(self.time), self.heating),
             0,
             radial_separation
         ).heat()
 
         heat_rate += Conduction(
-            results[coordinates[0], coordinates[1], coordinates[2] + 1,n],
-            results[coordinates[0], coordinates[1], coordinates[2],n],
-            coil.material.radial_thermal_conductivity,
+            results[coordinates[0], coordinates[1], min(coil.points.shape[2] - 1, coordinates[2] + 1),n - 1],
+            results[coordinates[0], coordinates[1], coordinates[2],n - 1],
+            coil.material.radial_conductivity(
+                results[tuple(coordinates) + (n - 1,)],
+                self.furnace.temperature_at(self.time), self.heating),
             0,
             radial_separation
         ).heat()
 
         heat_rate += Conduction(
-            results[coordinates[0], coordinates[1] - 1, coordinates[2],n],
-            results[coordinates[0], coordinates[1], coordinates[2],n],
-            coil.material.axial_thermal_conductivity,
+            results[coordinates[0], coordinates[1] - 1, coordinates[2],n - 1],
+            results[coordinates[0], coordinates[1], coordinates[2],n - 1],
+            coil.material.axial_conductivity(results[tuple(coordinates) + (n - 1,)]),
             0,
             height_separation
         ).heat()
 
         heat_rate += Convection(
-            self.furnace.temperature,
-            results[coordinates[0], coordinates[1], coordinates[2],n],
+            self.furnace.temperature_at(self.time),
+            results[coordinates[0], coordinates[1], coordinates[2],n - 1],
             self.furnace.convection_coefficient_top,
             0
         ).heat()
+
+        if coordinates[2] in (0, coil.points.shape[2] - 1):
+            heat_rate += Convection(
+                self.furnace.temperature_at(self.time),
+                results[tuple(coordinates) + (n - 1,)],
+                self.furnace.convection_coefficient_side,
+                0
+            ).heat()
 
         return heat_rate
 
@@ -69,35 +80,47 @@ class Simulator:
 
 
         heat_rate = Conduction(
-            results[coordinates[0], coordinates[1], coordinates[2] - 1,n],
-            results[coordinates[0], coordinates[1], coordinates[2],n],
-            coil.material.radial_thermal_conductivity,
+            results[coordinates[0], coordinates[1], max(0, coordinates[2] - 1),n - 1],
+            results[coordinates[0], coordinates[1], coordinates[2],n - 1],
+            coil.material.radial_conductivity(
+                results[tuple(coordinates) + (n - 1,)],
+                self.furnace.temperature_at(self.time), self.heating),
             0,
             radial_separation
         ).heat()
 
         heat_rate += Conduction(
-            results[coordinates[0], coordinates[1], coordinates[2] + 1,n],
-            results[coordinates[0], coordinates[1], coordinates[2],n],
-            coil.material.radial_thermal_conductivity,
+            results[coordinates[0], coordinates[1], min(coil.points.shape[2] - 1, coordinates[2] + 1),n - 1],
+            results[coordinates[0], coordinates[1], coordinates[2],n - 1],
+            coil.material.radial_conductivity(
+                results[tuple(coordinates) + (n - 1,)],
+                self.furnace.temperature_at(self.time), self.heating),
             0,
             radial_separation
         ).heat()
 
         heat_rate += Conduction(
-            results[coordinates[0], coordinates[1] + 1, coordinates[2],n],
-            results[coordinates[0], coordinates[1], coordinates[2],n],
-            coil.material.axial_thermal_conductivity,
+            results[coordinates[0], coordinates[1] + 1, coordinates[2],n - 1],
+            results[coordinates[0], coordinates[1], coordinates[2],n - 1],
+            coil.material.axial_conductivity(results[tuple(coordinates) + (n - 1,)]),
             0,
             height_separation
         ).heat()
 
         heat_rate += Convection(
-            self.furnace.temperature,
-            results[coordinates[0], coordinates[1], coordinates[2],n],
+            self.furnace.temperature_at(self.time),
+            results[coordinates[0], coordinates[1], coordinates[2],n - 1],
             self.furnace.convection_coefficient_top,
             0
         ).heat()
+
+        if coordinates[2] in (0, coil.points.shape[2] - 1):
+            heat_rate += Convection(
+                self.furnace.temperature_at(self.time),
+                results[tuple(coordinates) + (n - 1,)],
+                self.furnace.convection_coefficient_side,
+                0
+            ).heat()
 
         return heat_rate
 
@@ -113,31 +136,33 @@ class Simulator:
 
 
         heat_rate = Conduction(
-            results[coordinates[0], coordinates[1], coordinates[2] - 1,n],
-            results[coordinates[0], coordinates[1], coordinates[2],n],
-            coil.material.radial_thermal_conductivity,
+            results[coordinates[0], coordinates[1], max(0, coordinates[2] - 1),n - 1],
+            results[coordinates[0], coordinates[1], coordinates[2],n - 1],
+            coil.material.radial_conductivity(
+                results[tuple(coordinates) + (n - 1,)],
+                self.furnace.temperature_at(self.time), self.heating),
             0,
             radial_separation
         ).heat()
 
         heat_rate += Conduction(
-            results[coordinates[0], coordinates[1] - 1, coordinates[2],n],
-            results[coordinates[0], coordinates[1], coordinates[2],n],
-            coil.material.axial_thermal_conductivity,
+            results[coordinates[0], coordinates[1] - 1, coordinates[2],n - 1],
+            results[coordinates[0], coordinates[1], coordinates[2],n - 1],
+            coil.material.axial_conductivity(results[tuple(coordinates) + (n - 1,)]),
             0,
             height_separation
         ).heat()
 
         heat_rate += Convection(
-            self.furnace.temperature,
-            results[coordinates[0], coordinates[1], coordinates[2],n],
+            self.furnace.temperature_at(self.time),
+            results[coordinates[0], coordinates[1], coordinates[2],n - 1],
             self.furnace.convection_coefficient_top,
             0
         ).heat()
 
         heat_rate += Convection(
-            self.furnace.temperature,
-            results[coordinates[0], coordinates[1], coordinates[2],n],
+            self.furnace.temperature_at(self.time),
+            results[coordinates[0], coordinates[1], coordinates[2],n - 1],
             self.furnace.convection_coefficient_side,
             0
         ).heat()
@@ -155,31 +180,33 @@ class Simulator:
 
 
         heat_rate = Conduction(
-            results[coordinates[0], coordinates[1], coordinates[2] - 1,n],
-            results[coordinates[0], coordinates[1], coordinates[2],n],
-            coil.material.radial_thermal_conductivity,
+            results[coordinates[0], coordinates[1], max(0, coordinates[2] - 1),n - 1],
+            results[coordinates[0], coordinates[1], coordinates[2],n - 1],
+            coil.material.radial_conductivity(
+                results[tuple(coordinates) + (n - 1,)],
+                self.furnace.temperature_at(self.time), self.heating),
             0,
             radial_separation
         ).heat()
 
         heat_rate += Conduction(
-            results[coordinates[0], coordinates[1] + 1, coordinates[2],n],
-            results[coordinates[0], coordinates[1], coordinates[2],n],
-            coil.material.axial_thermal_conductivity,
+            results[coordinates[0], coordinates[1] + 1, coordinates[2],n - 1],
+            results[coordinates[0], coordinates[1], coordinates[2],n - 1],
+            coil.material.axial_conductivity(results[tuple(coordinates) + (n - 1,)]),
             0,
             height_separation
         ).heat()
 
         heat_rate += Convection(
-            self.furnace.temperature,
-            results[coordinates[0], coordinates[1], coordinates[2],n],
+            self.furnace.temperature_at(self.time),
+            results[coordinates[0], coordinates[1], coordinates[2],n - 1],
             self.furnace.convection_coefficient_top,
             0
         ).heat()
 
         heat_rate += Convection(
-            self.furnace.temperature,
-            results[coordinates[0], coordinates[1], coordinates[2],n],
+            self.furnace.temperature_at(self.time),
+            results[coordinates[0], coordinates[1], coordinates[2],n - 1],
             self.furnace.convection_coefficient_side,
             0
         ).heat()
@@ -197,48 +224,60 @@ class Simulator:
 
 
         heat_rate = Conduction(
-            results[coordinates[0], coordinates[1], coordinates[2] - 1,n],
-            results[coordinates[0], coordinates[1], coordinates[2],n],
-            coil.material.radial_thermal_conductivity,
-            0,
-            radial_separation
-        ).heat()
-
-        heat_rate = Conduction(
-            results[coordinates[0], coordinates[1], coordinates[2] + 1,n],
-            results[coordinates[0], coordinates[1], coordinates[2],n],
-            coil.material.radial_thermal_conductivity,
+            results[coordinates[0], coordinates[1], max(0, coordinates[2] - 1),n - 1],
+            results[coordinates[0], coordinates[1], coordinates[2],n - 1],
+            coil.material.radial_conductivity(
+                results[tuple(coordinates) + (n - 1,)],
+                self.furnace.temperature_at(self.time), self.heating),
             0,
             radial_separation
         ).heat()
 
         heat_rate += Conduction(
-            results[coordinates[0], coordinates[1] - 1, coordinates[2],n],
-            results[coordinates[0], coordinates[1], coordinates[2],n],
-            coil.material.axial_thermal_conductivity,
+            results[coordinates[0], coordinates[1], min(coil.points.shape[2] - 1, coordinates[2] + 1),n - 1],
+            results[coordinates[0], coordinates[1], coordinates[2],n - 1],
+            coil.material.radial_conductivity(
+                results[tuple(coordinates) + (n - 1,)],
+                self.furnace.temperature_at(self.time), self.heating),
+            0,
+            radial_separation
+        ).heat()
+
+        heat_rate += Conduction(
+            results[coordinates[0], coordinates[1] - 1, coordinates[2],n - 1],
+            results[coordinates[0], coordinates[1], coordinates[2],n - 1],
+            coil.material.axial_conductivity(results[tuple(coordinates) + (n - 1,)]),
             0,
             height_separation
         ).heat()
 
         heat_rate += Conduction(
-            results[coordinates[0], coordinates[1] + 1, coordinates[2],n],
-            results[coordinates[0], coordinates[1], coordinates[2],n],
-            coil.material.axial_thermal_conductivity,
+            results[coordinates[0], coordinates[1] + 1, coordinates[2],n - 1],
+            results[coordinates[0], coordinates[1], coordinates[2],n - 1],
+            coil.material.axial_conductivity(results[tuple(coordinates) + (n - 1,)]),
             0,
             height_separation
         ).heat()
 
 
+
+        if coordinates[2] in (0, coil.points.shape[2] - 1):
+            heat_rate += Convection(
+                self.furnace.temperature_at(self.time),
+                results[tuple(coordinates) + (n - 1,)],
+                self.furnace.convection_coefficient_side,
+                0
+            ).heat()
 
         return heat_rate
 
 
     def run(self):
-        n_max = int(self.simulation_time / self.time_step) # Number of points in time
+        n_max = int(np.ceil(self.simulation_time / self.time_step)) # Number of points in time
 
         length, height, depth = self.furnace.coils[0].points.shape
         results = np.zeros(
-            (length, height, depth, n_max)
+            (length, height, depth, n_max + 1)
             )
         results[:,:,:,0] = self.furnace.coils[0].points
 
@@ -247,12 +286,18 @@ class Simulator:
         radial_separation = (coil.outer_radius - coil.inner_radius) / coil.points.shape[2]
 
 
+        self.times = np.minimum(np.arange(n_max + 1) * self.time_step, self.simulation_time)
         n = 1
         while n <= n_max:         
 
+            self.time = self.times[n - 1]
+            step = self.times[n] - self.times[n - 1]
+            self.heating = self.furnace.temperature_at(self.times[n]) >= self.furnace.temperature_at(self.time)
+            self.furnace.update_coefficients(self.time)
+            # Circumferential symmetry: calculate one plane and copy it.
             # Iterate through each point. 
            
-            for i in range(length):
+            for i in range(1):
                 for j in range(height):
                     for k in range(depth):
 
@@ -263,7 +308,7 @@ class Simulator:
                                 results,
                                 [i,j,k],
                                 n
-                            ) * self.dt / (material.density * material.specific_heat * radial_separation) ) + results[i,j,k,n - 1]
+                            ) * step / (material.density * material.specific_heat * radial_separation) ) + results[i,j,k,n - 1]
 
                         elif (j == 0 and k == (depth - 1)):
                             
@@ -271,7 +316,7 @@ class Simulator:
                                 results,
                                 [i,j,k],
                                 n
-                            ) * self.dt / (material.density * material.specific_heat * radial_separation) ) + results[i,j,k,n - 1]
+                            ) * step / (material.density * material.specific_heat * radial_separation) ) + results[i,j,k,n - 1]
 
                         elif (j == (height - 1) and not k == (depth - 1)):
                             
@@ -279,7 +324,7 @@ class Simulator:
                                 results,
                                 [i,j,k],
                                 n
-                            ) * self.dt / (material.density * material.specific_heat * radial_separation) ) + results[i,j,k,n - 1]
+                            ) * step / (material.density * material.specific_heat * radial_separation) ) + results[i,j,k,n - 1]
 
                         elif (j == 0 and not k == (depth - 1)):
                             
@@ -287,7 +332,7 @@ class Simulator:
                                 results,
                                 [i,j,k],
                                 n
-                            ) * self.dt / (material.density * material.specific_heat * radial_separation) ) + results[i,j,k,n - 1]
+                            ) * step / (material.density * material.specific_heat * radial_separation) ) + results[i,j,k,n - 1]
 
                         else:
                             
@@ -295,18 +340,10 @@ class Simulator:
                                 results,
                                 [i,j,k],
                                 n
-                            ) * self.dt / (material.density * material.specific_heat * radial_separation) ) + results[i,j,k,n - 1]
+                            ) * step / (material.density * material.specific_heat * radial_separation) ) + results[i,j,k,n - 1]
 
+            results[1:, :, :, n] = results[0, :, :, n]
             n += 1
-            
 
-
-
-
-
-
-
-
-
-
-    
+        self.results = results
+        return results
