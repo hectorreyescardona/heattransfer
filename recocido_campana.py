@@ -1,45 +1,73 @@
 """
-Simulación 2D axisimétrica del recocido en campana (hidrógeno) de una pila de bobinas.
+Calentamiento de un rollo de acero (cilindro hueco) en recocido en campana.
+Comparación de dos aceros. Modelo 2D axisimétrico (r, z), volúmenes finitos, esquema explícito.
 
-Basado en: Yang et al., "Study of heat transfer model and buried thermocouple test of
-bell-type annealing furnace based on thermal equilibrium", Sci. Rep. 15:13362 (2025).
+Ecuaciones tomadas del código previo, que a su vez se basa en:
+  Yang et al., "Study of heat transfer model and buried thermocouple test of bell-type
+  annealing furnace based on thermal equilibrium", Sci. Rep. 15:13362 (2025).
+    - conductividad radial equivalente por red de resistencias (ecs. 9-17)
+    - conductividad axial = k_acero * S/(S+b)
+    - convección gas-rollo: Dittus-Boelter corregido (ecs. 7-8) y reparto de caudal (ecs. 5-6)
 
-Qué hace:
-  * Cada bobina se discretiza en celdas (r, z). Cada celda es un volumen de control
-    (método de equilibrio térmico / volúmenes finitos, esquema explícito).
-  * La temperatura del gas de protección Tg(t) es DATO (termopar de control).
-  * Conducción radial con conductividad equivalente lambda_r (red de resistencias,
-    ecs. 9-17 del artículo) y axial con lambda_z.
-  * Convección gas-bobina en las 4 caras (interior, exterior, superior, inferior) con
-    Dittus-Boelter corregido (ec. 7) y reparto de caudal entre canales (ecs. 5-6).
+CAMBIOS RESPECTO AL CÓDIGO PREVIO
+  * Un solo rollo (no una pila de 4).
+  * El acero es un parámetro (clase Steel); se comparan dos.
+  * Solo calentamiento: el gas sube con una rampa hasta T_obj y se mantiene ahí.
+  * Salida: tiempo en que el punto más frío del rollo llega a T_obj - TOL.
 
-TODO lo marcado con  # CALIBRAR  son parámetros que el artículo no publica o que
-dependen de tu horno: ajústalos con termopares enterrados / datos de planta.
-
-Unidades: SI (K, m, s, W, J/kg/K). Las temperaturas de entrada/salida de los perfiles
-se manejan en °C por comodidad y se convierten internamente a K.
+Marcado con  # CALIBRAR  = dato que NO viene de una fuente citada: ajustar o justificar.
+Unidades: SI (K, m, s, W, J/kg/K). Los perfiles de entrada/salida se manejan en °C.
 """
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import numpy as np
+import matplotlib.pyplot as plt
 
 SIGMA = 5.670374e-8  # Stefan-Boltzmann [W/m2K4]
 
 
 # ----------------------------------------------------------------------------
-# 1. PROPIEDADES DE MATERIALES
+# 1. PROPIEDADES DE LOS ACEROS (tablas en K; fuera de rango se mantiene el valor extremo)
 # ----------------------------------------------------------------------------
-# Acero bajo carbono (valores aprox. tipo AISI 1010). Sustituye por los de tu acero.
-_T_TAB = np.array([300.0, 400.0, 600.0, 800.0, 1000.0, 1100.0])
-_LAM_TAB = np.array([63.9, 58.7, 48.8, 39.2, 31.3, 28.0])        # W/mK
-_CP_TAB = np.array([434.0, 487.0, 559.0, 685.0, 1169.0, 700.0])  # J/kgK (pico ~Curie/A1)
+@dataclass
+class Steel:
+    name: str
+    T_k: np.ndarray    # [K]
+    k: np.ndarray      # [W/mK]
+    T_cp: np.ndarray   # [K]
+    cp: np.ndarray     # [J/kgK]
+    rho: float         # [kg/m3]
+
+    def lam(self, T):
+        return np.interp(T, self.T_k, self.k)
+
+    def c(self, T):
+        return np.interp(T, self.T_cp, self.cp)
 
 
-def lam_steel(T):
-    return np.interp(T, _T_TAB, _LAM_TAB)
+C2K = 273.15
 
+# AISI 1010 - Incropera et al. (6a ed., 2008), tabla A.1: 300, 400, 600, 800 y 1000 K.
+# (se eliminó el punto de 1100 K del código previo: no pertenece a la tabla del 1010)
+STEEL_1010 = Steel(
+    name="AISI 1010 (Incropera)",
+    T_k=np.array([300.0, 400.0, 600.0, 800.0, 1000.0]),
+    k=np.array([63.9, 58.7, 48.8, 39.2, 31.3]),
+    T_cp=np.array([300.0, 400.0, 600.0, 800.0, 1000.0]),
+    cp=np.array([434.0, 487.0, 559.0, 685.0, 1168.0]),
+    rho=7832.0,
+)
 
-def cp_steel(T):
-    return np.interp(T, _T_TAB, _CP_TAB)
+# AISI 1008 - MatWeb, ficha MaterialData_6780.
+# k(T) tabulada en °C. cp dado por rangos de temperatura: se usa el punto medio de cada rango.
+# OJO: la ficha no da cp entre 750 y 850 °C (zona del pico de Curie); se interpola linealmente.
+STEEL_1008 = Steel(
+    name="AISI 1008 (MatWeb)",
+    T_k=np.array([0, 100, 200, 400, 600, 800, 1000]) + C2K,
+    k=np.array([65.2, 60.2, 54.7, 45.2, 36.3, 28.4, 27.3]),
+    T_cp=np.array([100, 175, 225, 275, 375, 475, 575, 675, 725, 875]) + C2K,
+    cp=1000.0 * np.array([0.481, 0.519, 0.536, 0.553, 0.595, 0.662, 0.754, 0.867, 1.105, 0.846]),
+    rho=7872.0,
+)
 
 
 def gas_props(T, p=1.03e5):
@@ -55,22 +83,21 @@ def gas_props(T, p=1.03e5):
 
 
 # ----------------------------------------------------------------------------
-# 2. PARÁMETROS
+# 2. PARÁMETROS DE ENTRADA
 # ----------------------------------------------------------------------------
 @dataclass
 class CoilSpec:
-    ID: float = 0.61       # diámetro interior [m]  (no viene en el artículo)  # CALIBRAR
-    OD: float = 1.869      # diámetro exterior [m]  (Tabla 3, coil 1#)
-    W: float = 1.272       # ancho de la bobina = altura axial [m]
-    S: float = 1.5e-3      # espesor de banda [m]
+    ID: float = 0.508      # diámetro interior [m] = 20 in (dato del proyecto)
+    OD: float = 1.869      # diámetro exterior [m]  PROVISIONAL: valor del artículo (Tabla 3), NO de Ternium
+    W: float = 1.290       # ancho = altura axial [m]: máximo de la tabla Ternium de lámina en frío (756-1290 mm)
+    S: float = 1.5e-3      # espesor de banda [m]: dentro del rango Ternium 0.26-3.40 mm   # CALIBRAR
     nr: int = 20           # celdas radiales
     nz: int = 24           # celdas axiales
-    rho: float = 7850.0    # densidad del acero [kg/m3]
 
 
 @dataclass
 class ContactParams:
-    """Parámetros de la resistencia de contacto entre espiras (ecs. 9-17)."""
+    """Resistencia de contacto entre espiras (ecs. 9-17 del artículo)."""
     P: float = 8.0               # presión de contacto [MPa]         (artículo)
     H: float = 1133.86           # dureza [MPa]                      (artículo)
     eps: float = 0.08554         # emisividad                        (artículo)
@@ -86,44 +113,36 @@ class ContactParams:
 class FurnaceSpec:
     D_cover: float = 2.15        # diámetro interior de la campana interior [m]   # CALIBRAR
     Q_total: float = 30.0        # caudal volumétrico del ventilador [m3/s]       # CALIBRAR
-    zeta_inv: float = 0.909      # 1/zeta: atenuación del caudal (artículo)
     plate_gap: float = 0.015     # holgura de canal bajo/sobre plato convector [m] # CALIBRAR
-    top_gap: float = 0.15        # holgura sobre la última bobina [m]              # CALIBRAR
+    top_gap: float = 0.15        # holgura sobre el rollo [m]                      # CALIBRAR
     psi: float = 2.0             # realce por vórtices (ec. 7)                    # CALIBRAR
     xi: float = 1.0              # realce por radiación Tg>=800K (ec. 8)           # CALIBRAR
-    bottom_adiabatic: bool = True  # bobina 1 apoyada en la base (artículo: 3 caras)
+    bottom_adiabatic: bool = True  # rollo apoyado en la base (cara inferior adiabática)
     p_gas: float = 1.03e5        # presión absoluta del H2 [Pa]
 
 
+@dataclass
+class Programa:
+    """Perfil del gas de protección (solo calentamiento)."""
+    T0_C: float = 30.0           # temperatura inicial [°C]
+    rampa_K_h: float = 50.0      # velocidad de calentamiento del gas [K/h]        # CALIBRAR
+    TOL: float = 5.0             # el rollo "llegó" cuando T_fría >= T_obj - TOL [K]
+    t_max_h: float = 200.0       # límite de tiempo de la simulación [h]
+    dt_user: float = 30.0        # paso de tiempo máximo [s] (el de estabilidad puede ser menor)
+    save_every_s: float = 300.0
+
+
+def gas_temperature(t_s, T_obj_C, prog: Programa):
+    """Tg [°C]: rampa lineal hasta T_obj y se mantiene."""
+    return min(prog.T0_C + prog.rampa_K_h * t_s / 3600.0, T_obj_C)
+
+
 # ----------------------------------------------------------------------------
-# 3. REPARTO DE CAUDAL (ecs. 5 y 6)
+# 3. REPARTO DE CAUDAL (ecs. 5 y 6) - para un solo rollo
 # ----------------------------------------------------------------------------
-def flow_distribution(n_coils, Q, zeta_inv=0.909):
-    """
-    Devuelve:
-      Q_plate[k] : caudal por el plato convector k (entre bobina k y k+1), k=0..n-2
-      Q_side[k]  : caudal por las caras interior+exterior de la bobina k
-      Q_top      : caudal por el canal superior
-    Extrapolación a n_coils != 4 (el artículo solo da el caso de 4):
-      fd_{n-1} = 1/(2+n),  fd_{k} = zeta * fd_{k+1}   (zeta = 1/0.909)
-    """
-    zeta = 1.0 / zeta_inv
-    n_pl = n_coils - 1
-    fd = np.zeros(n_pl)
-    if n_pl > 0:
-        fd[-1] = 1.0 / (2 + n_coils)
-        for k in range(n_pl - 2, -1, -1):
-            fd[k] = zeta * fd[k + 1]
-    Q_plate = np.zeros(n_pl)
-    remaining = Q
-    Q_side = np.zeros(n_coils)
-    for k in range(n_coils):
-        Q_side[k] = remaining               # lo que sigue pasando por la bobina k
-        if k < n_pl:
-            Q_plate[k] = remaining * fd[k]
-            remaining = remaining * (1.0 - fd[k])
-    Q_top = remaining
-    return Q_plate, Q_side, Q_top
+def flow_distribution_single(Q):
+    """Caudal por caras laterales (interior+exterior) y por el canal superior."""
+    return Q, Q
 
 
 # ----------------------------------------------------------------------------
@@ -139,94 +158,76 @@ def h_channel(Tg, Q, A, D, L, fur: FurnaceSpec):
     return fur.xi * h if Tg >= 800.0 else h
 
 
-def face_coefficients(Tg, k, n_coils, coil: CoilSpec, fur: FurnaceSpec, flows):
-    """h en las 4 caras de la bobina k: (interior, exterior, superior, inferior)."""
-    Q_plate, Q_side, Q_top = flows
+def face_coefficients(Tg, coil: CoilSpec, fur: FurnaceSpec):
+    """h en las 4 caras: (interior, exterior, superior, inferior)."""
+    Q_side, Q_top = flow_distribution_single(fur.Q_total)
     A_in = np.pi / 4 * coil.ID ** 2
     A_out = np.pi / 4 * (fur.D_cover ** 2 - coil.OD ** 2)
-    u_eq_Q = Q_side[k] / (A_in + A_out)       # misma velocidad en bore y anillo
-    h_in = h_channel(Tg, u_eq_Q * A_in, A_in, coil.ID, coil.W, fur)
-    h_out = h_channel(Tg, u_eq_Q * A_out, A_out, fur.D_cover - coil.OD, coil.W, fur)
+    u_Q = Q_side / (A_in + A_out)                # misma velocidad en el hueco y en el anillo
+    h_in = h_channel(Tg, u_Q * A_in, A_in, coil.ID, coil.W, fur)
+    h_out = h_channel(Tg, u_Q * A_out, A_out, fur.D_cover - coil.OD, coil.W, fur)
 
     r_circ = np.pi * (coil.ID + coil.OD) / 2.0
     L_pl = (coil.OD - coil.ID) / 2.0
-
-    def h_gap(Qg, gap):
-        return h_channel(Tg, Qg, r_circ * gap, 2 * gap, L_pl, fur)
-
-    # cara superior
-    if k < n_coils - 1:
-        h_top = h_gap(Q_plate[k] / 2.0, fur.plate_gap)      # el plato reparte mitad/mitad
-    else:
-        h_top = h_gap(Q_top, fur.top_gap)
-    # cara inferior
-    if k == 0:
-        h_bot = 0.0 if fur.bottom_adiabatic else h_gap(Q_side[0] * 0.1, fur.plate_gap)
-    else:
-        h_bot = h_gap(Q_plate[k - 1] / 2.0, fur.plate_gap)
+    h_top = h_channel(Tg, Q_top, r_circ * fur.top_gap, 2 * fur.top_gap, L_pl, fur)
+    h_bot = 0.0 if fur.bottom_adiabatic else h_channel(
+        Tg, 0.1 * Q_side, r_circ * fur.plate_gap, 2 * fur.plate_gap, L_pl, fur)
     return h_in, h_out, h_top, h_bot
 
 
 # ----------------------------------------------------------------------------
 # 5. CONDUCTIVIDAD RADIAL EQUIVALENTE (ecs. 9-17)
 # ----------------------------------------------------------------------------
-def lambda_radial(Tm, S, cp_: ContactParams, lam_g, emulsion_active):
+def lambda_radial(Tm, S, cp_: ContactParams, lam_g, emulsion_active, steel: Steel):
     """
-    Tm: temperatura de cada celda [K] (array). lam_g: conductividad del gas a Tm.
-    Resistencia total en serie:  R = S/lamS (=2*R_S/2) + R_O(o R_E) + 1/(1/R_R+1/R_G+1/R_D)
+    Resistencia total en serie: R_acero + R_óxido (o emulsión) + (R_rad || R_gas || R_contacto).
     """
     P, H = cp_.P, cp_.H
     phi = P / (H + P)                              # ec. 14
     b = 42.7e-6 * np.exp(-0.05 * P)                # ec. 15  [m]
-    lam_S = lam_steel(Tm)
-    # conductancias en paralelo (inversas de R_R, R_G, R_D)
-    g_rad = 4 * (1 - phi) * cp_.eps * SIGMA * Tm ** 3 / (2 - cp_.eps)    # ec. 11
-    g_gas = (1 - phi) * lam_g / b                                         # ec. 12
-    g_con = 1.13 * lam_S * cp_.tan_theta * phi ** 0.94 / cp_.sigma_p      # ec. 13
+    lam_S = steel.lam(Tm)
+    g_rad = 4 * (1 - phi) * cp_.eps * SIGMA * Tm ** 3 / (2 - cp_.eps)      # ec. 11
+    g_gas = (1 - phi) * lam_g / b                                           # ec. 12
+    g_con = 1.13 * lam_S * cp_.tan_theta * phi ** 0.94 / cp_.sigma_p        # ec. 13
     R_par = 1.0 / (g_rad + g_gas + g_con)
     R_S = S / lam_S
-    if emulsion_active:   # Tg < 800 K en calentamiento: ec. 17 rama inferior
+    if emulsion_active:   # Tg < 800 K en calentamiento: ec. 17, rama inferior
         return cp_.eta * (S + b) / (R_S + R_par)
     R_O = cp_.b_O / cp_.lam_O
     return (S + b + cp_.b_O) / (R_S + R_O + R_par)
 
 
 # ----------------------------------------------------------------------------
-# 6. SOLVER POR BOBINA (equilibrio térmico en volúmenes de control)
+# 6. SOLVER DEL ROLLO (equilibrio térmico en volúmenes de control)
 # ----------------------------------------------------------------------------
 class CoilModel:
-    def __init__(self, spec: CoilSpec, T0, contact: ContactParams, cylindrical=True):
-        self.s, self.cp_ = spec, contact
+    def __init__(self, spec: CoilSpec, steel: Steel, T0_K, contact: ContactParams):
+        self.s, self.steel, self.cp_ = spec, steel, contact
         s = spec
         self.dr = (s.OD - s.ID) / 2.0 / s.nr
         self.dz = s.W / s.nz
-        rc = s.ID / 2.0 + (np.arange(s.nr) + 0.5) * self.dr
-        if cylindrical:
-            self.r_c = rc
-            self.r_w = rc - self.dr / 2
-            self.r_e = rc + self.dr / 2
-        else:                       # versión "plana" del artículo
-            self.r_c = self.r_w = self.r_e = np.ones(s.nr)
+        self.r_c = s.ID / 2.0 + (np.arange(s.nr) + 0.5) * self.dr
+        self.r_w = self.r_c - self.dr / 2
+        self.r_e = self.r_c + self.dr / 2
         self.V = (self.r_c * self.dr * self.dz)[:, None]          # (nr,1) por radián
-        self.T = np.full((s.nr, s.nz), float(T0))
+        self.T = np.full((s.nr, s.nz), float(T0_K))
         self.b = 42.7e-6 * np.exp(-0.05 * contact.P)
         self.emulsion_burned = False
 
     def derivative(self, Tg, h4):
         """dT/dt y dt máximo estable (criterio ec. 4 generalizado)."""
-        s, T = self.s, self.T
+        s, T, st = self.s, self.T, self.steel
         h_in, h_out, h_top, h_bot = h4
-        rho_eff = s.rho * s.S / (s.S + self.b)      # densidad aparente de la bobina
-        c = cp_steel(T)
-        rho_g, mu_g, lam_g, Pr = gas_props(T)
+        rho_eff = st.rho * s.S / (s.S + self.b)      # densidad aparente del rollo
+        c = st.c(T)
+        _, _, lam_g, _ = gas_props(T)
         emulsion = (Tg < self.cp_.T_switch) and not self.emulsion_burned
-        lam_r = lambda_radial(T, s.S, self.cp_, lam_g, emulsion)
-        lam_z = lam_steel(T) * s.S / (s.S + self.b)
+        lam_r = lambda_radial(T, s.S, self.cp_, lam_g, emulsion, st)
+        lam_z = st.lam(T) * s.S / (s.S + self.b)
 
-        def harm(a, b_):  # media armónica en la cara
+        def harm(a, b_):
             return 2 * a * b_ / (a + b_)
 
-        # conductancias entre celdas vecinas [W/K]
         G_r = harm(lam_r[:-1, :], lam_r[1:, :]) * (self.r_e[:-1, None] * self.dz / self.dr)
         G_z = harm(lam_z[:, :-1], lam_z[:, 1:]) * (self.r_c[:, None] * self.dr / self.dz)
 
@@ -254,83 +255,75 @@ class CoilModel:
 
 
 # ----------------------------------------------------------------------------
-# 7. SIMULACIÓN COMPLETA
+# 7. SIMULACIÓN DE UN CALENTAMIENTO
 # ----------------------------------------------------------------------------
-def gas_profile_example(t_s):
-    """Perfil de Tg [°C] -> aprox. de la Fig. 10 (sin la falla de combustión). EDÍTALO."""
-    pts_h = np.array([0, 1, 3, 12, 17.5, 18, 24, 35.0])
-    pts_C = np.array([30, 280, 380, 705, 705, 560, 400, 150.0])
-    return np.interp(t_s / 3600.0, pts_h, pts_C)
+def calentar(steel, T_obj_C, coil=None, fur=None, contact=None, prog=None):
+    """Calienta hasta que T_fría >= T_obj - TOL. Devuelve (modelo, historia, t_llegada_h)."""
+    coil, fur = coil or CoilSpec(), fur or FurnaceSpec()
+    contact, prog = contact or ContactParams(), prog or Programa()
+    m = CoilModel(coil, steel, prog.T0_C + C2K, contact)
 
-
-def simulate(coils, fur=None, contact=None, Tg_fun=gas_profile_example, t_end_h=35.0,
-             dt_user=30.0, T0_C=30.0, save_every_s=300.0, cylindrical=True, verbose=True):
-    fur = fur or FurnaceSpec()
-    contact = contact or ContactParams()
-    n = len(coils)
-    models = [CoilModel(c, T0_C + 273.15, contact, cylindrical) for c in coils]
-    flows = flow_distribution(n, fur.Q_total, fur.zeta_inv)
-
-    t, t_end = 0.0, t_end_h * 3600.0
-    hist = {"t": [], "Tg": [], "cold": [[] for _ in range(n)], "hot": [[] for _ in range(n)],
-            "center": [[] for _ in range(n)]}
-    next_save = 0.0
-    n_steps = 0
+    t, t_end = 0.0, prog.t_max_h * 3600.0
+    hist = {"t": [], "Tg": [], "cold": [], "hot": []}
+    next_save, t_reach = 0.0, np.nan
     while t < t_end:
-        Tg = Tg_fun(t) + 273.15
+        Tg_C = gas_temperature(t, T_obj_C, prog)
+        Tg = Tg_C + C2K
         if Tg >= contact.T_switch:
-            for m in models:
-                m.emulsion_burned = True
-        derivs, dts = [], []
-        for k, m in enumerate(models):
-            h4 = face_coefficients(Tg, k, n, coils[k], fur, flows)
-            d, dtm = m.derivative(Tg, h4)
-            derivs.append(d); dts.append(dtm)
-        dt = min(dt_user, 0.9 * min(dts), t_end - t)     # estabilidad explícita
-        for m, d in zip(models, derivs):
-            m.T += dt * d
+            m.emulsion_burned = True
+        d, dt_stab = m.derivative(Tg, face_coefficients(Tg, coil, fur))
+        dt = min(prog.dt_user, 0.9 * dt_stab)
+        m.T += dt * d
         t += dt
-        n_steps += 1
         if t >= next_save:
-            hist["t"].append(t / 3600.0); hist["Tg"].append(Tg - 273.15)
-            for k, m in enumerate(models):
-                hist["cold"][k].append(m.T.min() - 273.15)
-                hist["hot"][k].append(m.T.max() - 273.15)
-                hist["center"][k].append(m.T[m.s.nr // 2, m.s.nz // 2] - 273.15)
-            next_save += save_every_s
-    if verbose:
-        print(f"pasos: {n_steps}, dt mínimo estable ~ {min(dts):.1f} s")
-    return models, {k: (np.array(v) if not isinstance(v, list) or not v or not isinstance(v[0], list)
-                        else [np.array(x) for x in v]) for k, v in hist.items()}
+            hist["t"].append(t / 3600.0); hist["Tg"].append(Tg_C)
+            hist["cold"].append(m.T.min() - C2K); hist["hot"].append(m.T.max() - C2K)
+            next_save += prog.save_every_s
+        if m.T.min() - C2K >= T_obj_C - prog.TOL:
+            t_reach = t / 3600.0
+            break
+    return m, {k: np.array(v) for k, v in hist.items()}, t_reach
 
 
+# ----------------------------------------------------------------------------
+# 8. COMPARACIÓN
+# ----------------------------------------------------------------------------
 if __name__ == "__main__":
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    ACEROS = [STEEL_1010, STEEL_1008]
+    T_OBJ = [580, 680, 780]          # °C
 
-    # 4 bobinas apiladas (diámetros exteriores de la Tabla 3 del artículo)
-    coils = [CoilSpec(OD=1.869), CoilSpec(OD=1.867), CoilSpec(OD=1.837), CoilSpec(OD=1.761)]
-    models, h = simulate(coils)
+    coil, prog = CoilSpec(), Programa()
+    print(f"ID = {coil.ID*1000:.0f} mm, OD = {coil.OD*1000:.0f} mm (provisional), "
+          f"ancho = {coil.W*1000:.0f} mm, espesor banda = {coil.S*1000:.2f} mm")
+    print(f"rampa del gas = {prog.rampa_K_h:g} K/h, tolerancia = {prog.TOL:g} K\n")
 
+    res, hist780, mods780 = {}, {}, {}
+    for T_obj in T_OBJ:
+        fila = []
+        for st in ACEROS:
+            m, h, t_reach = calentar(st, T_obj, coil=coil, prog=prog)
+            res[(T_obj, st.name)] = t_reach
+            if T_obj == 780:
+                hist780[st.name], mods780[st.name] = h, m
+            fila.append(f"{st.name}: {t_reach:6.2f} h")
+        print(f"T_obj = {T_obj} °C | " + " | ".join(fila))
+
+    # Gráficas
     fig, ax = plt.subplots(1, 2, figsize=(13, 5))
-    ax[0].plot(h["t"], h["Tg"], "r", lw=2, label="Gas (dato)")
-    for k in range(4):
-        ax[0].plot(h["t"], h["hot"][k], "--", label=f"{k+1}# punto caliente")
-        ax[0].plot(h["t"], h["cold"][k], label=f"{k+1}# punto frío")
-    ax[0].set_xlabel("t [h]"); ax[0].set_ylabel("T [°C]"); ax[0].legend(fontsize=7, ncol=2)
-    ax[0].set_title("Evolución de temperaturas")
+    for st in ACEROS:
+        h = hist780[st.name]
+        ax[0].plot(h["t"], h["cold"], label=f"{st.name} - punto frío")
+        ax[0].plot(h["t"], h["hot"], "--", label=f"{st.name} - punto caliente")
+    ax[0].plot(h["t"], h["Tg"], "r", lw=1.5, label="Gas (dato)")
+    ax[0].set_xlabel("t [h]"); ax[0].set_ylabel("T [°C]"); ax[0].legend(fontsize=7)
+    ax[0].set_title("Calentamiento hasta 780 °C")
 
-    m = models[1]
-    r = m.s.ID / 2 + (np.arange(m.s.nr) + 0.5) * m.dr
-    z = (np.arange(m.s.nz) + 0.5) * m.dz
-    im = ax[1].pcolormesh(r, z, (m.T - 273.15).T, shading="auto", cmap="jet")
+    st = ACEROS[0]; m = mods780[st.name]
+    r = m.r_c; z = (np.arange(m.s.nz) + 0.5) * m.dz
+    im = ax[1].pcolormesh(r, z, (m.T - C2K).T, shading="auto", cmap="jet")
     plt.colorbar(im, ax=ax[1], label="°C")
     ax[1].set_xlabel("r [m]"); ax[1].set_ylabel("z [m]")
-    ax[1].set_title("Campo de T final, bobina 2#")
-    plt.tight_layout(); plt.savefig("resultado_recocido.png", dpi=130)
-
-    for k in range(4):
-        i = int(np.argmax(h["cold"][k]))
-        print(f"Bobina {k+1}: T_fría máx = {h['cold'][k][i]:.1f} °C a las {h['t'][i]:.1f} h; "
-              f"T_caliente máx = {max(h['hot'][k]):.1f} °C")
+    ax[1].set_title(f"Campo de T al llegar a 780 °C - {st.name}")
+    plt.tight_layout()
+    plt.savefig("resultado_recocido.png", dpi=130)
+    plt.show()
