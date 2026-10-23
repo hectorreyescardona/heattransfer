@@ -17,59 +17,55 @@ args = parser.parse_args()
 
 
 gas = ProtectionGas(
-    pressure=101325.0, 
-    reference_temperature=300.0,
-    conductivity=0.1805, 
-    viscosity=8.9e-6, 
-    transport_exponent=0.7,
-    molar_mass=0.002016, 
-    gas_constant=8.314462618)
+    conductivity=0.1805,
+    viscosity=8.9e-6,
+    density=0.0819)
 
 material = Material(
-    density=7850.0, 
-    emissivity=0.08554, 
+    density=7850.0,
+    emissivity=0.08554,
     specific_heat=500.0,
     radial_thermal_conductivity=None,
-    axial_thermal_conductivity=lambda t: float(np.clip(54.0 - 0.03 * (t - 300.0), 25.0, 60.0)),
-    gas=gas, 
-    strip_thickness=0.001, 
-    pressure=8.0, 
+    axial_thermal_conductivity=54.0,
+    gas=gas,
+    strip_thickness=0.001,
+    pressure=8.0,
     hardness=1133.86,
-    roughness=3.2215e-6, 
-    surface_slope=0.1, 
+    roughness=3.2215e-6,
+    surface_slope=0.1,
     oxide_thickness=10e-6,
-    oxide_conductivity=3.0, 
+    oxide_conductivity=3.0,
     emulsion_correction=0.8)
+
 coil = Coil(
-    material=material, 
-    inner_radius=0.25, 
+    material=material,
+    inner_radius=0.25,
     outer_radius=0.75,
-    height=1.0, 
-    point_separation=0.05, 
+    height=1.0,
+    point_separation=0.05,
     initial_temperature=300.0)
 
 furnace = Furnace(
     temperature=lambda time: 300.0 + 700.0 * min(time / (10 * 3600), 1.0),
-    coils=[coil], 
-    gas=gas, 
-    gas_velocity=8.0, 
+    coils=[coil],
+    gas=gas,
+    gas_velocity=8.0,
     hydraulic_diameter=0.1,
-    circulation_length=1.0, 
+    circulation_length=1.0,
     vortex_enhancement=1.0,
-    radiation_enhancement=1.1, 
-    side_flow_fraction=1.0, 
+    radiation_enhancement=1.1,
+    side_flow_fraction=1.0,
     top_flow_fraction=1.0)
 
 simulator = Simulator(
-    furnace=furnace, 
-    time_step=30.0, 
+    furnace=furnace,
+    time_step=30.0,
     simulation_time=24 * 3600
 )
-    
+
 
 results = simulator.run()
 
-# Graficas
 section = results[0]
 dr = (coil.outer_radius - coil.inner_radius) / section.shape[1]
 dz = coil.height / section.shape[0]

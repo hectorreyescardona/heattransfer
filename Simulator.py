@@ -294,8 +294,6 @@ class Simulator:
             step = self.times[n] - self.times[n - 1]
             self.heating = self.furnace.temperature_at(self.times[n]) >= self.furnace.temperature_at(self.time)
             self.furnace.update_coefficients(self.time)
-            # Circumferential symmetry: calculate one plane and copy it.
-            # Iterate through each point. 
            
             for i in range(1):
                 for j in range(height):
