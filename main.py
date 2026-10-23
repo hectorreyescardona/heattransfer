@@ -1,6 +1,9 @@
+from Simulator import Simulator
+from Furnace import Furnace
 from Material import Material
 from Coil import Coil
 
+# Setup
 material = Material()
 coil = Coil(
     material=material,
@@ -10,6 +13,16 @@ coil = Coil(
     point_separation=0.1,
     initial_temperature=273.15
 )
+furnace = Furnace(
+    temperature=1000,
+    coils=[coil]
+)
+simulator = Simulator(
+    furnace=furnace,
+    time_step=0.1,
+    simulation_time=10
+)
 
-print(coil.points)
-print(coil.points.shape)
+# Simulation
+simulator.run()
+

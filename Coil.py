@@ -3,10 +3,11 @@ import Material
 
 
 class Coil:
-    """Mesh for FEM"""
+    """Mesh for FEM.
+        The indices for the depth go from the innermost part to the exterior of ther coil."""
 
     def __init__(self, 
-             material: Material = Material.Material(),
+             material: Material.Material = Material.Material(),
              inner_radius: float = 0,
              outer_radius: float = 0,
              height: float = 0,
@@ -14,7 +15,7 @@ class Coil:
              initial_temperature: float = 273.15,
         ):
         
-        self.material = Material
+        self.material = material
         self.inner_radius = inner_radius
         self.outer_radius = outer_radius
         self.height = height

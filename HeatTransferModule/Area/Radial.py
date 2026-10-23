@@ -7,7 +7,7 @@ class Radial(Area):
     def __init__(self, area):
         super().__init__(area)
 
-    def calculate(coil:Coil, depth_index:int):
+    def calculate(self, coil: Coil, depth_index:int):
         
         # Points of the mesh
         n_of_points_length = coil.points.shape[0]
