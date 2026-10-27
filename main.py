@@ -72,6 +72,7 @@ results = simulator.run()
 # The simulator repeats the same radial/height section around the circumference.
 section_c = results[0] - 273.15
 time_hr = simulator.times / 3600.0
+heatmap_index = int(np.argmin(np.abs(time_hr - 14.0)))
 height_count, radial_count, _ = section_c.shape
 
 radii = coil.inner_radius + (np.arange(radial_count) + 0.5) * (
@@ -88,7 +89,7 @@ fig = make_subplots(
     horizontal_spacing=0.12,
     subplot_titles=(
         "Temperature history",
-        f"Radial–height slice at {time_hr[-1]:.2f} h",
+        f"Radial–height slice at {time_hr[heatmap_index]:.2f} h",
     ),
 )
 
@@ -118,7 +119,7 @@ fig.add_trace(
 
 fig.add_trace(
     go.Heatmap(
-        x=radii, y=heights, z=section_c[:, :, -1],
+        x=radii, y=heights, z=section_c[:, :, heatmap_index],
         colorscale="Inferno", colorbar=dict(title="T (°C)"),
         hovertemplate="Radius: %{x:.3f} m<br>Height: %{y:.3f} m<br>T: %{z:.2f} °C<extra></extra>",
     ),
