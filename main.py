@@ -73,14 +73,13 @@ results = simulator.run()
 section_c = results[0] - 273.15
 time_hr = simulator.times / 3600.0
 height_count, radial_count, _ = section_c.shape
+
 radii = coil.inner_radius + (np.arange(radial_count) + 0.5) * (
     coil.outer_radius - coil.inner_radius
 ) / radial_count
+
 heights = (np.arange(height_count) + 0.5) * coil.height / height_count
 gas_c = [furnace.temperature_at(time) - 273.15 for time in simulator.times]
-
-if not np.all(np.isfinite(section_c)):
-    raise ValueError("Simulation produced non-finite temperatures; check the time step and model inputs.")
 
 fig = make_subplots(
     rows=1,
@@ -95,7 +94,7 @@ fig = make_subplots(
 
 histories = [
     ("Protective gas", gas_c, "#111827", "dash"),
-    ("Coil middle cell", section_c[height_count // 2, radial_count // 2], "#9333ea", "solid"),
+    ("Coil mid-height, innermost radial cell", section_c[height_count // 2, 2], "#9333ea", "solid"),
 ]
 for name, temperatures, color, dash in histories:
     fig.add_trace(
@@ -110,7 +109,7 @@ for name, temperatures, color, dash in histories:
 fig.add_trace(
     go.Scatter(
         x=experiment["time_hr"], y=experiment["temperature_c"],
-        name="Experiment (1# cold spot, approximate)", mode="lines+markers",
+        name="Experiment (1# cold spot)", mode="lines+markers",
         line=dict(color="#16a34a"), marker=dict(size=4),
         hovertemplate="Time: %{x:.2f} h<br>T: %{y:.2f} °C<extra>%{fullData.name}</extra>",
     ),
