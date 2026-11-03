@@ -54,9 +54,9 @@ class Coil:
 
         return self.initial_temperature * np.ones(
             (
-                int(length / h),
-                int(height / h),
-                int(depth / h)
+                int(length / h), # Circumferential direction
+                int(height / h), # Height
+                int(depth / h) # Radial direction
             )
         )
 

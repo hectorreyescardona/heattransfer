@@ -58,13 +58,6 @@ simulator = Simulator(
     simulation_time = furnace.duration
 )
 
-# Approximate readings of the green experimental cold-spot curve in the figure.
-# Keep the experimental hours/°C for plotting; do not use it as a gas boundary.
-experiment = np.genfromtxt(
-    Path(__file__).with_name("experiment_temperature.csv"),
-    delimiter=",", names=True, ndmin=1,
-)
-
 results = simulator.run()
 
 
