@@ -54,16 +54,15 @@ class Furnace:
 
     def convection_coefficient(self, temperature, flow_fraction):
         """Corrected forced-convection correlation, paper Eqs. 7-8."""
-        if (self.gas is None or self.gas_velocity is None
-                or self.hydraulic_diameter is None or self.circulation_length is None
-                or self.vortex_enhancement is None or self.radiation_enhancement is None):
-            raise ValueError("Variable convection requires gas properties and channel settings.")
+
         velocity = self.gas_velocity * flow_fraction
+
         diameter = self.hydraulic_diameter
         h = (0.023 * self.vortex_enhancement * velocity**0.8 / diameter**0.2
              * self.gas.thermal_conductivity(temperature)
              * (self.gas.dynamic_viscosity(temperature) / self.gas.density(temperature))**-0.8
              * (1 + (diameter / self.circulation_length)**0.7))
+        
         return h * (self.radiation_enhancement if temperature >= 800 else 1.0)
 
     def update_coefficients(self, time):
