@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
 import numpy as np
 import Coil
 from ProtectionGas import ProtectionGas
@@ -8,24 +7,25 @@ from ProtectionGas import ProtectionGas
 
 class Furnace:
     def __init__(self, 
-                temperature: str | Path,
+                temperature: np.ndarray,
                 coils: list[Coil.Coil], gas: ProtectionGas | None = None, gas_velocity: float | None = None,
                 hydraulic_diameter: float | None = None, circulation_length: float | None = None,
                 vortex_enhancement: float | None = None, radiation_enhancement: float | None = None,
                 side_flow_fraction=1.0, top_flow_fraction=1.0):
         """Parameters
         ----------
-        temperature : str or Path
-            CSV path with time_hr (hours) and temperature_c (degrees Celsius).
+        temperature : numpy.ndarray
+            Numeric array of shape (N, 2), with time in hours in column 0
+            and temperature in degrees Celsius in column 1. Requires at
+            least two finite samples with increasing times starting at zero.
         coils : list(Coil.Coil)
             List of coils in the furnace.
         """
-        self.temperature = Path(temperature)
-        profile = np.genfromtxt(self.temperature, delimiter=",", names=True, ndmin=1)
-        if not {"time_hr", "temperature_c"}.issubset(profile.dtype.names or ()):
-            raise ValueError("Furnace CSV requires time_hr and temperature_c columns.")
-        self.profile_times = profile["time_hr"] * 3600.0
-        self.profile_temperatures = profile["temperature_c"] + 273.15
+        self.temperature = np.array(temperature, dtype=float, copy=True)
+        if self.temperature.ndim != 2 or self.temperature.shape[1] != 2:
+            raise ValueError("Furnace temperature requires an (N, 2) array of time (hours) and temperature (Celsius).")
+        self.profile_times = self.temperature[:, 0] * 3600.0
+        self.profile_temperatures = self.temperature[:, 1] + 273.15
         if (len(self.profile_times) < 2
                 or not np.all(np.isfinite(self.profile_times))
                 or not np.all(np.isfinite(self.profile_temperatures))
@@ -49,7 +49,7 @@ class Furnace:
         self.top_flow_fraction = top_flow_fraction
 
     def temperature_at(self, time):
-        """Gas temperature in kelvin at time in seconds; hold endpoints outside the CSV range."""
+        """Gas temperature in kelvin at time in seconds; hold endpoints outside the profile range."""
         return float(np.interp(time, self.profile_times, self.profile_temperatures))
 
     def convection_coefficient(self, temperature, flow_fraction):

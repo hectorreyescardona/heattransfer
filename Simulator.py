@@ -306,6 +306,7 @@ class Simulator:
         n = 1
         while n <= n_max:         
 
+            
             self.time = self.times[n - 1]
             step = self.times[n] - self.times[n - 1]
             self.heating = self.furnace.temperature_at(self.times[n]) >= self.furnace.temperature_at(self.time)
