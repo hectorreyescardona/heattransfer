@@ -196,7 +196,7 @@ class Furnace:
 
         # As seen in Table 1 of Yang X. et al. Coil 4 has identical sides and top values. 
         flow_ratio_zones = {
-            "coil-0-top": 20.2, # There is no flow under the first coil
+            "coil-0-top": 0, # There is no flow under the first coil
             "coil-1-top": 20.2,
             "coil-1-sides": 100,
             "coil-1-core": 100,
