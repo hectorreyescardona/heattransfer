@@ -76,8 +76,24 @@ Heatmaps now use `history[:, :, time_index]`, without a leading circumference in
 Restart an existing notebook kernel and rerun the cells after this storage change;
 previous simulation results in memory have the old shape.
 
+## Conductividad térmica del acero
+
+Se emplea la correlación dependiente de la temperatura de Taylor y Wang (2017, ecuación 26):
+\(k_s(T) = 73.9823 - 0.0437T\), con \(T\) en kelvin y \(k_s\) en W/(m·K).
+Se evalúa a la temperatura media entre celdas para la conducción axial y a la temperatura
+local del acero en el modelo radial. Su aplicación a estos rollos es una hipótesis de modelado:
+el artículo estudia una tira de acero en un horno continuo, no propiedades medidas de SPCC.
+`Material(conductivity=None)` activa la correlación; un valor numérico conserva la opción constante.
+
 ## Citas
 
 Yang, X.-j., Dai, F.-x., Bao, X.-j., Chen, G., Zhang, L., & Li, Y.-r. (2025). Study of heat transfer model and buried thermocouple test of bell-type annealing furnace based on thermal equilibrium. Scientific Reports, 15, Article 13362. https://doi.org/10.1038/s41598-025-97422-4
 
 Zhang, H., Zhang, J., Cao, J., Jing, Y., & Wu, C. (2005). 罩式退火炉不同内罩结构传热效率 [Heat transfer efficiency of inner covers with different shapes in a bell-type annealing furnace]. Journal of University of Science and Technology Beijing, 27(5), 532–535. https://doi.org/10.13374/j.issn1001-053x.2005.05.036
+
+Ltd, G. S. C. (2023, September 28). SPCC Steel Properties - Knowledge - GNEE Steel. https://www.gneeppgi.com/info/spcc-steel-properties-53015712.html
+
+Alfa-Tech - Stal Jakościowa. (2026, October 21). Thermal conductivity of steel and metals – λ coefficient. Alfa-Tech - Stal Jakościowa – Stal Nierdzewna, Żaroodporna, Specjalna. https://www.alfa-tech.com.pl/en/physical-properties-of-steel-and-metals/thermal-conductivity/
+
+
+Taylor, S. W., & Wang, S. (2017). Modelling steel strip heating within an annealing furnace. *Pacific Journal of Mathematics for Industry, 9*, Article 5. https://doi.org/10.1186/s40736-017-0030-7

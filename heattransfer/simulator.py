@@ -58,7 +58,10 @@ class Simulator:
         heat_rate += Conduction(
             results[coordinates[0], coordinates[1] - 1, coordinates[2],n - 1],
             results[coordinates[0], coordinates[1], coordinates[2],n - 1],
-            coil.material.conductivity,
+            coil.material.thermal_conductivity(
+                0.5 * (results[coordinates[0], coordinates[1] - 1, coordinates[2],n - 1]
+                       + results[coordinates[0], coordinates[1], coordinates[2],n - 1])
+            ),
             0,
             height_separation
         ).heat()
@@ -117,7 +120,10 @@ class Simulator:
         heat_rate += Conduction(
             results[coordinates[0], coordinates[1] + 1, coordinates[2],n - 1],
             results[coordinates[0], coordinates[1], coordinates[2],n - 1],
-            coil.material.conductivity,
+            coil.material.thermal_conductivity(
+                0.5 * (results[coordinates[0], coordinates[1] + 1, coordinates[2],n - 1]
+                       + results[coordinates[0], coordinates[1], coordinates[2],n - 1])
+            ),
             0,
             height_separation
         ).heat()
@@ -161,7 +167,10 @@ class Simulator:
         heat_rate += Conduction(
             results[coordinates[0], coordinates[1] - 1, coordinates[2],n - 1],
             results[coordinates[0], coordinates[1], coordinates[2],n - 1],
-            coil.material.conductivity,
+            coil.material.thermal_conductivity(
+                0.5 * (results[coordinates[0], coordinates[1] - 1, coordinates[2],n - 1]
+                       + results[coordinates[0], coordinates[1], coordinates[2],n - 1])
+            ),
             0,
             height_separation
         ).heat()
@@ -214,7 +223,10 @@ class Simulator:
         heat_rate += Conduction(
             results[coordinates[0], coordinates[1] + 1, coordinates[2],n - 1],
             results[coordinates[0], coordinates[1], coordinates[2],n - 1],
-            coil.material.conductivity,
+            coil.material.thermal_conductivity(
+                0.5 * (results[coordinates[0], coordinates[1] + 1, coordinates[2],n - 1]
+                       + results[coordinates[0], coordinates[1], coordinates[2],n - 1])
+            ),
             0,
             height_separation
         ).heat()
@@ -277,7 +289,10 @@ class Simulator:
         heat_rate += Conduction(
             results[coordinates[0], coordinates[1] - 1, coordinates[2],n - 1],
             results[coordinates[0], coordinates[1], coordinates[2],n - 1],
-            coil.material.conductivity,
+            coil.material.thermal_conductivity(
+                0.5 * (results[coordinates[0], coordinates[1] - 1, coordinates[2],n - 1]
+                       + results[coordinates[0], coordinates[1], coordinates[2],n - 1])
+            ),
             0,
             height_separation
         ).heat()
@@ -285,7 +300,10 @@ class Simulator:
         heat_rate += Conduction(
             results[coordinates[0], coordinates[1] + 1, coordinates[2],n - 1],
             results[coordinates[0], coordinates[1], coordinates[2],n - 1],
-            coil.material.conductivity,
+            coil.material.thermal_conductivity(
+                0.5 * (results[coordinates[0], coordinates[1] + 1, coordinates[2],n - 1]
+                       + results[coordinates[0], coordinates[1], coordinates[2],n - 1])
+            ),
             0,
             height_separation
         ).heat()
@@ -318,6 +336,7 @@ class Simulator:
 
     def _integrate_coil(self, coil):
         """Store one axisymmetric section; use a no-copy view for region indexing."""
+
         _, height, depth = coil.points.shape
         history = np.empty((height, depth, len(self.times)), dtype=float)
         history[:, :, 0] = coil.points[0]
@@ -367,6 +386,7 @@ class Simulator:
         guard. Furnace/coil objects must be picklable for process execution.
         max_workers limits concurrency; the default is the number of coils.
         """
+        
         if not self.furnace.coils:
             raise ValueError("Simulation requires at least one coil.")
         if (not np.isfinite(self.time_step) or self.time_step <= 0

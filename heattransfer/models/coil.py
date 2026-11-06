@@ -69,6 +69,7 @@ class Coil:
         """Yang et al., Eqs. 9-17: equivalent interlayer resistance.  """
 
         material = self.material
+        steel_conductivity = material.thermal_conductivity(temperature)
         phi = material.pressure / (material.hardness + material.pressure)
         gap = 42.7e-6 * np.exp(-0.05 * material.pressure)
         radiation = (4
@@ -80,12 +81,12 @@ class Coil:
                 )
         gas_conductance = (1 - phi) * gas.thermal_conductivity(temperature) / gap
         contact = (1.13 
-                   * material.conductivity 
+                   * steel_conductivity
                    * self.surface_slope 
                    * phi**0.94 
                    / material.roughness)
 
-        resistance = (self.strip_thickness / material.conductivity 
+        resistance = (self.strip_thickness / steel_conductivity
                       + 1 / (radiation + gas_conductance + contact)
                     )
 

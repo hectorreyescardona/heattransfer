@@ -5,6 +5,7 @@ from unittest.mock import patch
 import numpy as np
 
 from heattransfer.models.furnace import Furnace
+from heattransfer.models.material import Material
 from heattransfer.models.protection_gas import ProtectionGas
 from heattransfer.simulator import Simulator
 from heattransfer.analysis.analyzer import Analyzer
@@ -18,7 +19,7 @@ def make_coil(shape, temperature=400):
     return SimpleNamespace(
         points=np.full(shape, temperature, dtype=float),
         height=1.0, inner_radius=0.2, outer_radius=0.8,
-        material=SimpleNamespace(conductivity=2.0, density=7800, specific_heat=480),
+        material=Material(conductivity=2.0, density=7800, specific_heat=480),
         radial_conductivity=constant_radial_conductivity,
     )
 
