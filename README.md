@@ -1,49 +1,83 @@
 # Heat Transfer Model for Anneraling in Bell-Type Furnaces
 
-## Datos experimentales
 
-Los datos utilizados de (Yang et al., 2025), fueron extraidos mediante IA, para tener, a grosso modo, datos experimentales con los cuales poder hacer una verificación del modelo implementado. 
+## Project structure
 
-### Posiciones de los termopares
+Only Jupyter notebooks live as files at the project root.
 
-La posición radial `r` se mide desde el eje vertical del horno. La posición vertical `z` se mide hacia arriba desde la base de la bobina correspondiente. Todas las distancias están expresadas en mm.
+- `heattransfer/models/`: furnace, coil, material, and protective gas models.
+- `heattransfer/physics/`: conduction, convection, and area calculations.
+- `heattransfer/simulator.py`: time integration and coil region calculations.
+- `heattransfer/analysis/`: result extraction and plotting.
+- `data/experimental/`: experimental CSV measurements.
+- `tests/`: automated simulation tests.
+- `config/requirements.txt`: Python dependencies.
+- `docs/`: project documentation and references.
+- `.cache/legacy/`: preserved generated files from the previous layout.
 
-| Punto | Número de bobina | Ubicación | Posición radial, r (mm) | Posición vertical, z (mm) |
-|---|---|---|---:|---:|
-| 1 | — (encima de la bobina 4) | Hueco central, a la altura superior de la bobina 4 | Aproximadamente 0 | 1272 respecto a la base de la bobina 4 |
-| 2 | 4 | Borde superior interior | Radio interior de la bobina 4 + 15 | 1272 |
-| 3 | 4 | Borde superior exterior | 877.5 | 1272 |
-| 4 | 4 | Interior de la bobina | 590.5 | 636 |
-| 5 | 4 | Superficie exterior | 880.5 | 636 |
-| 6 | 3 | Borde superior exterior | 914.0 | 1272 |
-| 7 | 3 | Interior de la bobina | 608.5 | Aproximadamente 636 |
-| 8 | 2 | Borde superior exterior | 929.0 | 1250 |
-| 9 | 2 | Interior de la bobina | 620.5 | Aproximadamente 625 |
-| 10 | 1 | Borde superior exterior | 927.0 | 1272 |
-| 11 | 1 | Interior de la bobina | 615.5 | Aproximadamente 636 |
-| 12 | — (debajo de la bobina 1) | Espacio central debajo de las bobinas | Aproximadamente 0 | −60 respecto a la cara superior de la placa de soporte |
+Run commands from the project root:
 
-Notas:
-- Las bobinas están numeradas de abajo (1) hacia arriba (4).
-- Las posiciones se interpretan de la Figura 8; los radios exteriores y las alturas se obtienen de la Tabla 3.
-- Los puntos 7, 9 y 11 aparecen a media altura, pero sus posiciones verticales no están acotadas explícitamente.
-- Los puntos 1 y 12 parecen estar sobre el eje vertical.
-- Las coordenadas verticales utilizan referencias locales, no un origen único para todo el conjunto.
+```bash
+python -m pip install -r config/requirements.txt
+python -m unittest discover -s tests -v
+```
 
-### Rollos
+Open `main.ipynb` with the project root as the notebook working directory.
+Run the updated import cell after restarting an existing kernel so old module
+imports do not persist. Notebook outputs are preserved during reorganization.
 
-El ancho indicado en el artículo corresponde a la altura vertical de cada bobina en el conjunto apilado. El espesor corresponde a la lámina de acero.
+Example imports:
 
-| Número de bobina | Identificador | Tipo de acero | Diámetro exterior (mm) | Ancho (mm) | Espesor de la lámina (mm) | Longitud de la lámina (m) | Masa (kg) |
-|---|---|---|---:|---:|---:|---:|---:|
-| 1 | L179046800T | SPCC-PSR | 1869 | 1272 | 1.50 | 1634 | 24,490 |
-| 2 | L179038800T | SPCC | 1867 | 1250 | 1.50 | 1629 | 23,993 |
-| 3 | L179046600T | SPCC-PSR | 1837 | 1272 | 1.48 | 1593 | 23,557 |
-| 4 | L179046700T | SPCC-PSR | 1761 | 1272 | 1.50 | 1428 | 21,417 |
+```python
+from heattransfer.simulator import Simulator
+from heattransfer.models.furnace import Furnace
+from heattransfer.analysis.analyzer import Analyzer
+```
 
-Fuente: Figura 8 y Tabla 3 de [Yang et al. (2025)](https://doi.org/10.1038/s41598-025-97422-4).
+## Compact results and parallel execution
 
+The axisymmetric solver stores each coil as a `(height, radius, time)` array.
+It does not store duplicate circumferential sections. For the four-coil notebook,
+full-history storage is approximately 38.8 MiB instead of 4.36 GiB (115× smaller).
+Coil geometry and simulation parameters are unchanged.
+
+```python
+results = simulator.run()  # serial
+results = simulator.run(parallel=True, max_workers=4)  # one task per coil
+histories = simulator.results_by_coil  # always a list, in furnace order
+point_history = histories[0][height_index, radial_index, :]
+```
+
+`run()` returns one 3D array for a single coil, or a list for multiple coils.
+Timesteps remain sequential within each coil. The process mode is valid because
+the current model prescribes the gas temperature and does not couple coil results.
+Workers use the spawn start method and importable module-level functions, so the
+provided notebook can call process mode directly. Custom model objects must be
+picklable. For standalone Python scripts, use a main guard:
+
+```python
+if __name__ == "__main__":
+    results = simulator.run(parallel=True, max_workers=4)
+```
+
+`max_workers=1` and single-coil simulations execute locally without a process pool.
+Process startup and result transfer add overhead, so short runs may be faster serially.
+The parent process receives only compact histories; no shared-memory cleanup is needed.
+
+Analysis can select any coil (zero-based) from the result list:
+
+```python
+analyzer = Analyzer(simulator.results_by_coil, simulator, furnace, coil_index=2)
+data = analyzer.get_point_data(r=0.1, z=0.5)
+```
+
+The analyzer also accepts a single compact history or a legacy 4D history.
+Heatmaps now use `history[:, :, time_index]`, without a leading circumference index.
+Restart an existing notebook kernel and rerun the cells after this storage change;
+previous simulation results in memory have the old shape.
 
 ## Citas
 
 Yang, X.-j., Dai, F.-x., Bao, X.-j., Chen, G., Zhang, L., & Li, Y.-r. (2025). Study of heat transfer model and buried thermocouple test of bell-type annealing furnace based on thermal equilibrium. Scientific Reports, 15, Article 13362. https://doi.org/10.1038/s41598-025-97422-4
+
+Zhang, H., Zhang, J., Cao, J., Jing, Y., & Wu, C. (2005). 罩式退火炉不同内罩结构传热效率 [Heat transfer efficiency of inner covers with different shapes in a bell-type annealing furnace]. Journal of University of Science and Technology Beijing, 27(5), 532–535. https://doi.org/10.13374/j.issn1001-053x.2005.05.036

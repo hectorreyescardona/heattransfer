@@ -1,4 +1,4 @@
-from Furnace import Furnace
+from heattransfer.models.furnace import Furnace
 import plotly.graph_objects as go
 
 
@@ -7,8 +7,19 @@ class Analyzer:
     def __init__(self,
                  results,
                  simulator,
-                 furnace: Furnace):
-        self.results = results
+                 furnace: Furnace,
+                 coil_index: int = 0):
+        """Select a coil from a result list, or accept one coil's history.
+
+        Histories use (height, radius, time); old 4D histories are also accepted.
+        coil_index is zero-based and selects the matching furnace geometry.
+        """
+        self.coil = furnace.coils[coil_index]
+        self.results = results[coil_index] if isinstance(results, (list, tuple)) else results
+        if self.results.ndim == 4:
+            self.results = self.results[0]
+        if self.results.ndim != 3:
+            raise ValueError("Expected a (height, radius, time) temperature history.")
         self.furnace = furnace
         self.simulator = simulator
 
@@ -23,8 +34,7 @@ class Analyzer:
         """
 
 
-        # Just treating the one coil furnace
-        coil = self.furnace.coils[0] 
+        coil = self.coil
         height_points = coil.points.shape[1]
         radial_points = coil.points.shape[2]
         coil_depth = coil.outer_radius - coil.inner_radius
@@ -34,8 +44,7 @@ class Analyzer:
         r_index = int(radial_points * ratio)
         h_index = int( (z / coil.height) * height_points )
 
-        # Returns first tangential layer
-        return self.results[0,h_index,r_index]
+        return self.results[h_index,r_index]
 
     def plot_point_temperature_evolution(self, 
                            r: float,

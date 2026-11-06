@@ -1,4 +1,4 @@
-from HeatTransferModule.HeatTransfer import HeatTransfer
+from heattransfer.physics.heat_transfer import HeatTransfer
 
 class Conduction(HeatTransfer):
 

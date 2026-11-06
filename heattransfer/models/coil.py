@@ -1,6 +1,6 @@
 import numpy as np
-import Material
-from ProtectionGas import ProtectionGas
+from heattransfer.models import material as Material
+from heattransfer.models.protection_gas import ProtectionGas
 
 
 class Coil:
@@ -36,6 +36,7 @@ class Coil:
 
         # Check how to determine the spacing of the points. 
         self.points = self._spacing()
+        self.coil_num = 1
 
     def _volume(self):
 

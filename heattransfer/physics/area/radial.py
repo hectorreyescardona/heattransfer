@@ -1,5 +1,5 @@
-from Area import Area
-from Coil import Coil
+from heattransfer.physics.area.area import Area
+from heattransfer.models.coil import Coil
 import numpy as np
 
 class Radial(Area):
