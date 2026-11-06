@@ -1,0 +1,3 @@
+# Optional dependencies for the hydrogen property comparison notebook
+-r requirements.txt
+CoolProp>=7.2
