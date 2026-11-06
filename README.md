@@ -85,6 +85,18 @@ local del acero en el modelo radial. Su aplicación a estos rollos es una hipót
 el artículo estudia una tira de acero en un horno continuo, no propiedades medidas de SPCC.
 `Material(conductivity=None)` activa la correlación; un valor numérico conserva la opción constante.
 
+## Calor específico del acero
+
+Se usa la función de Taylor y Wang (2017, ecuación 27):
+\(c_p(T) = 345 - 0.504333T + 0.004895T^2 - 9.06667\times10^{-6}T^3 + 5.5\times10^{-9}T^4\),
+con \(T\) en kelvin y \(c_p\) en J/(kg·K). `Material(specific_heat=None)`
+activa la función mediante `heat_capacity(T)`; un valor numérico mantiene el modo
+constante. Ambos notebooks activan la función. El simulador la evalúa en cada
+celda a la temperatura local del acero del paso anterior, no a la del gas.
+El ajuste interpola los datos entre 300 y 1000 K; fuera de ese intervalo se
+extrapola. Su aplicación a SPCC es una hipótesis, no una medición de ese grado.
+Reiniciar el kernel y repetir la simulación para actualizar las gráficas.
+
 ## Citas
 
 Yang, X.-j., Dai, F.-x., Bao, X.-j., Chen, G., Zhang, L., & Li, Y.-r. (2025). Study of heat transfer model and buried thermocouple test of bell-type annealing furnace based on thermal equilibrium. Scientific Reports, 15, Article 13362. https://doi.org/10.1038/s41598-025-97422-4

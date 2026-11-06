@@ -364,8 +364,9 @@ class Simulator:
                     else:
                         heat_rate = self._inner_region_heat_rate(results, [0,j,k], n, coil)
 
+                    specific_heat = material.heat_capacity(history[j,k,n - 1])
                     history[j,k,n] = history[j,k,n - 1] + (
-                        heat_rate * step / (material.density * material.specific_heat * radial_separation)
+                        heat_rate * step / (material.density * specific_heat * radial_separation)
                     )
             if not np.all(np.isfinite(history[:, :, n])) or np.any(history[:, :, n] <= 0):
                 raise ValueError(
