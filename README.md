@@ -3,7 +3,7 @@
 
 ## Project structure
 
-Only Jupyter notebooks live as files at the project root.
+The project strucutre is as follows: 
 
 - `heattransfer/models/`: furnace, coil, material, and protective gas models.
 - `heattransfer/physics/`: conduction, convection, and area calculations.
@@ -15,16 +15,14 @@ Only Jupyter notebooks live as files at the project root.
 - `docs/`: project documentation and references.
 - `.cache/legacy/`: preserved generated files from the previous layout.
 
+For quick testing use `four_coil_test.ipynb`.
+
 Run commands from the project root:
 
 ```bash
 python -m pip install -r config/requirements.txt
 python -m unittest discover -s tests -v
 ```
-
-Open `main.ipynb` with the project root as the notebook working directory.
-Run the updated import cell after restarting an existing kernel so old module
-imports do not persist. Notebook outputs are preserved during reorganization.
 
 Example imports:
 
@@ -36,17 +34,8 @@ from heattransfer.analysis.analyzer import Analyzer
 
 ## Compact results and parallel execution
 
-The axisymmetric solver stores each coil as a `(height, radius, time)` array.
-It does not store duplicate circumferential sections. For the four-coil notebook,
-full-history storage is approximately 38.8 MiB instead of 4.36 GiB (115× smaller).
-Coil geometry and simulation parameters are unchanged.
-
-```python
-results = simulator.run()  # serial
-results = simulator.run(parallel=True, max_workers=4)  # one task per coil
-histories = simulator.results_by_coil  # always a list, in furnace order
-point_history = histories[0][height_index, radial_index, :]
-```
+The axisymmetrical solver stores each coil as a `(height, radius, time)` array. For the four-coil notebook,
+full-history storage is approximately 38.8 MiB.
 
 `run()` returns one 3D array for a single coil, or a list for multiple coils.
 Timesteps remain sequential within each coil. The process mode is valid because
@@ -64,32 +53,10 @@ if __name__ == "__main__":
 Process startup and result transfer add overhead, so short runs may be faster serially.
 The parent process receives only compact histories; no shared-memory cleanup is needed.
 
-Analysis can select any coil (zero-based) from the result list:
+## Propiedades del acero
 
-```python
-analyzer = Analyzer(simulator.results_by_coil, simulator, furnace, coil_index=2)
-data = analyzer.get_point_data(r=0.1, z=0.5)
-```
+Se emplea la correlación dependiente de la temperatura de Taylor y Wang (2017, ecuación 26) para el calor específico y la conductividad. Más información en `hydrogen_effect_comparison.ipynb`.
 
-The analyzer also accepts a single compact history or a legacy 4D history.
-Heatmaps now use `history[:, :, time_index]`, without a leading circumference index.
-Restart an existing notebook kernel and rerun the cells after this storage change;
-previous simulation results in memory have the old shape.
-
-## Conductividad térmica del acero
-
-Se emplea la correlación dependiente de la temperatura de Taylor y Wang (2017, ecuación 26):
-\(k_s(T) = 73.9823 - 0.0437T\), con \(T\) en kelvin y \(k_s\) en W/(m·K).
-Se evalúa a la temperatura media entre celdas para la conducción axial y a la temperatura
-local del acero en el modelo radial. 
-
-## Calor específico del acero
-
-Se usa la función de Taylor y Wang (2017, ecuación 27):
-\(c_p(T) = 345 - 0.504333T + 0.004895T^2 - 9.06667\times10^{-6}T^3 + 5.5\times10^{-9}T^4\),
-con \(T\) en kelvin y \(c_p\) en J/(kg·K). `Material(specific_heat=None)`
-activa la función mediante `heat_capacity(T)`; un valor numérico mantiene el modo
-constante. Ambos notebooks activan la función. 
 
 ## Citas
 
