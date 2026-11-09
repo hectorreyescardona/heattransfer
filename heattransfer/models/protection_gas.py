@@ -20,14 +20,16 @@ class ReferenceHydrogen(ProtectionGas):
     """Pure normal H2: Leachman EOS, Assael k, Muzny mu via CoolProp HEOS.
 
     Pressure is constant absolute Pa, unrelated to coil contact pressure.
-    Tables use linear interpolation to avoid repeated EOS solves inside the
+    Tables use linear interpolation to avoid repeated solves inside the
     time-stepping loop. Instances contain only scalars/arrays and are picklable.
     Temperatures are kelvin; output is SI. No endpoint clipping is performed.
     """
 
-    def __init__(self, pressure=101325.0, temperature_min=273.0,
-                 temperature_max=1000.0, table_step=0.25,
-                 allow_extrapolation=False):
+    def __init__(self, pressure=101325.0, 
+                 temperature_min=273.0,
+                 temperature_max=1100.0, 
+                 table_step=0.25,
+                 allow_extrapolation=True):
         import math
         import warnings
         import numpy as np
@@ -66,9 +68,11 @@ class ReferenceHydrogen(ProtectionGas):
     def _value(self, name, temperature):
         import math
         temperature = float(temperature)
+
         if not math.isfinite(temperature) or not self.temperature_min <= temperature <= self.temperature_max:
             raise ValueError(f"Hydrogen temperature {temperature} K outside table "
                              f"[{self.temperature_min}, {self.temperature_max}] K.")
+        
         location = (temperature-self.temperature_min)/self._spacing
         values = self._properties[name]
         index = min(int(location), len(values)-2)

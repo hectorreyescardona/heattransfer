@@ -59,7 +59,7 @@ class Analyzer:
         plot_height = 800
 
         layout = {
-            "title": f"Evolución de temperatura de punto en (z,r) = {z,r}",
+            "title": f"Temperature evolution at point (z,r) = {z,r}",
             #"width": 1920,
             "height": plot_height,
             "font": {

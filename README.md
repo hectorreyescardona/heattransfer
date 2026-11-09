@@ -1,6 +1,6 @@
-# Heat Transfer Model for Anneraling in Bell-Type Furnaces
+# Heat Transfer Model for Annealing in Bell-Type Furnaces
 
-heattransfer models the thermodynamical interactions between the protection gas and the coil during an annealing process. Only convection between the p. g. and the coils was considered, disregarding radiation as argumented by Yang et al. 
+heattransfer models the thermodynamic interactions between the protection gas and the coil during an annealing process. Only convection between the p. g. and the coils was considered, disregarding radiation as argued by Yang et al.
 
 
 ## Project structure
@@ -78,61 +78,67 @@ Heatmaps now use `history[:, :, time_index]`, without a leading circumference in
 Restart an existing notebook kernel and rerun the cells after this storage change;
 previous simulation results in memory have the old shape.
 
-## Conductividad térmica del acero
+## Steel thermal conductivity
 
-Se emplea la correlación dependiente de la temperatura de Taylor y Wang (2017, ecuación 26):
-\(k_s(T) = 73.9823 - 0.0437T\), con \(T\) en kelvin y \(k_s\) en W/(m·K).
-Se evalúa a la temperatura media entre celdas para la conducción axial y a la temperatura
-local del acero en el modelo radial. Su aplicación a estos rollos es una hipótesis de modelado:
-el artículo estudia una tira de acero en un horno continuo, no propiedades medidas de SPCC.
-`Material(conductivity=None)` activa la correlación; un valor numérico conserva la opción constante.
+The temperature-dependent correlation from Taylor and Wang (2017, Equation 26) is used:
+\(k_s(T) = 73.9823 - 0.0437T\), with \(T\) in kelvin and \(k_s\) in W/(m·K).
+It is evaluated at the mean temperature between cells for axial conduction and at the
+local steel temperature in the radial model. Applying it to these coils is a modeling
+assumption: the paper studies steel strip in a continuous furnace, not measured SPCC properties.
+`Material(conductivity=None)` enables the correlation; a numerical value retains constant conductivity.
 
-## Calor específico del acero
+## Steel specific heat
 
-Se usa la función de Taylor y Wang (2017, ecuación 27):
+The function from Taylor and Wang (2017, Equation 27) is used:
 \(c_p(T) = 345 - 0.504333T + 0.004895T^2 - 9.06667\times10^{-6}T^3 + 5.5\times10^{-9}T^4\),
-con \(T\) en kelvin y \(c_p\) en J/(kg·K). `Material(specific_heat=None)`
-activa la función mediante `heat_capacity(T)`; un valor numérico mantiene el modo
-constante. Ambos notebooks activan la función. El simulador la evalúa en cada
-celda a la temperatura local del acero del paso anterior, no a la del gas.
-El ajuste interpola los datos entre 300 y 1000 K; fuera de ese intervalo se
-extrapola. Su aplicación a SPCC es una hipótesis, no una medición de ese grado.
-Reiniciar el kernel y repetir la simulación para actualizar las gráficas.
+with \(T\) in kelvin and \(c_p\) in J/(kg·K). `Material(specific_heat=None)`
+enables the function through `heat_capacity(T)`; a numerical value retains constant
+specific heat. Both simulation notebooks enable the function. The simulator evaluates
+it in each cell at the previous step's local steel temperature, not the gas temperature.
+The fit interpolates the data between 300 and 1000 K and extrapolates outside that interval.
+Applying it to SPCC is an assumption, not a measurement of that grade.
+Restart the kernel and rerun the simulation to update the plots.
 
-## Citas
+## References
 
 Yang, X.-j., Dai, F.-x., Bao, X.-j., Chen, G., Zhang, L., & Li, Y.-r. (2025). Study of heat transfer model and buried thermocouple test of bell-type annealing furnace based on thermal equilibrium. Scientific Reports, 15, Article 13362. https://doi.org/10.1038/s41598-025-97422-4
 
-Zhang, H., Zhang, J., Cao, J., Jing, Y., & Wu, C. (2005). 罩式退火炉不同内罩结构传热效率 [Heat transfer efficiency of inner covers with different shapes in a bell-type annealing furnace]. Journal of University of Science and Technology Beijing, 27(5), 532–535. https://doi.org/10.13374/j.issn1001-053x.2005.05.036
+Zhang, H., Zhang, J., Cao, J., Jing, Y., & Wu, C. (2005). Heat transfer efficiency of inner covers with different shapes in a bell-type annealing furnace [English translation of the original Chinese title]. Journal of University of Science and Technology Beijing, 27(5), 532–535. https://doi.org/10.13374/j.issn1001-053x.2005.05.036
 
 Ltd, G. S. C. (2023, September 28). SPCC Steel Properties - Knowledge - GNEE Steel. https://www.gneeppgi.com/info/spcc-steel-properties-53015712.html
 
-Alfa-Tech - Stal Jakościowa. (2026, October 21). Thermal conductivity of steel and metals – λ coefficient. Alfa-Tech - Stal Jakościowa – Stal Nierdzewna, Żaroodporna, Specjalna. https://www.alfa-tech.com.pl/en/physical-properties-of-steel-and-metals/thermal-conductivity/
+Alfa-Tech – Quality Steel. (2026, October 21). Thermal conductivity of steel and metals – λ coefficient. Alfa-Tech – Quality Steel, Stainless Steel, Heat-Resistant Steel, Special Steel. https://www.alfa-tech.com.pl/en/physical-properties-of-steel-and-metals/thermal-conductivity/
 
 
 Taylor, S. W., & Wang, S. (2017). Modelling steel strip heating within an annealing furnace. *Pacific Journal of Mathematics for Industry, 9*, Article 5. https://doi.org/10.1186/s40736-017-0030-7
 
 
-## Experimento: propiedades de referencia del hidrógeno
+## Experiment: reference hydrogen properties
 
-`ReferenceHydrogen` en `heattransfer.models.protection_gas` implementa la misma
-interfaz de propiedades del gas usando CoolProp HEOS: densidad de Leachman et al.
-(2009), conductividad de Assael et al. (2011) y viscosidad de Muzny et al. (2013,
-corrección de 2022). Se incluyen términos dependientes de densidad. Instalar con
+`ReferenceHydrogen` in `heattransfer.models.protection_gas` implements the same gas
+property interface using CoolProp HEOS: Leachman et al. (2009) density, Assael et al.
+(2011) conductivity, and Muzny et al. (2013, with the 2022 erratum) viscosity.
+Density-dependent terms are included. Install with
 `pip install -r config/requirements-properties.txt`.
 
-Las tablas interpoladas cada 0.25 K evitan resolver la ecuación de estado en cada
-celda/paso. La presión es absoluta y constante; el valor por defecto es 101325 Pa.
-El intervalo por defecto es 273–1000 K. Para el experimento se permite explícitamente
-la extrapolación hasta 1100 K porque el perfil supera 1000 K. No se recortan temperaturas.
-El caudal de 19.4 se conserva como volumen real en m³/s a condiciones del horno.
+Tables interpolated at 0.25 K intervals avoid solving the equation of state at every
+cell and timestep. Pressure is absolute and constant, with a default of 101325 Pa.
+The current class defaults to 273–1100 K with extrapolation enabled above 1000 K.
+The experiment explicitly permits this extension because the profile exceeds 1000 K.
+Temperatures are not clipped. The original experiment retains a flow of 19.4 m³/s,
+interpreted as actual volumetric flow at furnace conditions.
 
-Los resultados de ambos métodos, parámetros, entradas y fuentes están en
-`experiments/results/hydrogen_2026-11-06/`. El notebook
-`experiments/hydrogen_effect_comparison.ipynb` compara Termopar 9 y 11 sin repetir
-las simulaciones. `experiments/run_hydrogen_comparison.py` documenta la ejecución;
-rechaza sobrescribir un caso existente. Los notebooks originales conservan su
-configuración; el experimento cambia únicamente el objeto `furnace.gas`.
+Results for both methods, parameters, inputs, and source snapshots are stored in
+`experiments/results/hydrogen_2026-11-06/`.
+`experiments/hydrogen_effect_comparison.ipynb` compares Thermocouples 9 and 11 without
+rerunning the simulations. `experiments/run_hydrogen_comparison.py` documents execution
+and refuses to overwrite an existing case. The experiment uses a frozen configuration
+and changes only the `furnace.gas` object between its baseline and reference runs.
+
+Saved NPZ files retain the legacy `termopar_<number>_K` keys for compatibility;
+all displayed labels use "Thermocouple". Archived source snapshots have translated
+plot labels. Each run's `translation_provenance.json` records the original and translated
+file hashes; `parameters.json` retains the original simulation-time source hashes.
 
 Leachman, J. W., Jacobsen, R. T., Penoncello, S. G., & Lemmon, E. W. (2009). Fundamental equations of state for parahydrogen, normal hydrogen, and orthohydrogen. *Journal of Physical and Chemical Reference Data, 38*(3), 721–748. https://doi.org/10.1063/1.3160306
 

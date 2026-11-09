@@ -7,6 +7,9 @@ import numpy as np
 from heattransfer.physics.convection import Convection
 from heattransfer.physics.conduction import Conduction
 
+# Progress bar
+from tqdm import tqdm
+
 class Simulator:
     def __init__(self,
                  furnace: Furnace,
@@ -346,7 +349,7 @@ class Simulator:
         material = coil.material
         radial_separation = (coil.outer_radius - coil.inner_radius) / depth
 
-        for n in range(1, len(self.times)):
+        for n in tqdm(range(1, len(self.times))):
             self.time = self.times[n - 1]
             step = self.times[n] - self.times[n - 1]
             self.heating = self.furnace.temperature_at(self.times[n]) >= self.furnace.temperature_at(self.time)

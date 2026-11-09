@@ -3,39 +3,39 @@ Temperatures in K; r is measured from inner surface.
 
 [
   {
-    "Termopar": 9,
-    "Modelo": "H₂ constante",
+    "Thermocouple": 9,
+    "Model": "Constant-property H₂",
     "N": 75,
     "RMSE [K]": 11.799727911427919,
     "MAE [K]": 8.126106785260552,
-    "Sesgo [K]": 1.9288023820717581,
-    "Máx. |error| [K]": 34.870399431767964
+    "Bias [K]": 1.9288023820717581,
+    "Max. |error| [K]": 34.870399431767964
   },
   {
-    "Termopar": 9,
-    "Modelo": "H₂ de referencia",
+    "Thermocouple": 9,
+    "Model": "Reference H₂",
     "N": 75,
     "RMSE [K]": 14.213011517044757,
     "MAE [K]": 10.916927232110462,
-    "Sesgo [K]": -7.278995961112265,
-    "Máx. |error| [K]": 27.828252445566477
+    "Bias [K]": -7.278995961112265,
+    "Max. |error| [K]": 27.828252445566477
   },
   {
-    "Termopar": 11,
-    "Modelo": "H₂ constante",
+    "Thermocouple": 11,
+    "Model": "Constant-property H₂",
     "N": 75,
     "RMSE [K]": 15.885390038139796,
     "MAE [K]": 11.514808669842518,
-    "Sesgo [K]": 10.220729884138825,
-    "Máx. |error| [K]": 42.35256547060487
+    "Bias [K]": 10.220729884138825,
+    "Max. |error| [K]": 42.35256547060487
   },
   {
-    "Termopar": 11,
-    "Modelo": "H₂ de referencia",
+    "Thermocouple": 11,
+    "Model": "Reference H₂",
     "N": 75,
     "RMSE [K]": 17.335407548445744,
     "MAE [K]": 15.457145828035063,
-    "Sesgo [K]": 2.7259476656454082,
-    "Máx. |error| [K]": 25.986717149902802
+    "Bias [K]": 2.7259476656454082,
+    "Max. |error| [K]": 25.986717149902802
   }
 ]
