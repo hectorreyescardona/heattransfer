@@ -1,0 +1,278 @@
+HYDROGEN COMPARISON — scientific
+
+Frozen input: ../configuration.py; archived CSV inputs: ../inputs/.
+Full float64 histories: results.npz, coil_N_K[height, radius, time].
+Four processes, same mesh, timestep, material, geometry, flow and profile in both cases.
+Steel conductivity and specific heat: Taylor & Wang (2017), Eqs. 26 and 27 when None.
+gas_flow=24.25 is interpreted as actual m^3/s, not normalized flow.
+Scientific case: normal pure H2, absolute pressure 101325 Pa; CoolProp HEOS,
+Assael conductivity, Muzny viscosity, Leachman density; linear 0.25 K tables.
+273–1100 K table; values above 1000 K are explicitly extrapolated. No clipping.
+Baseline gas properties are the existing constants listed below.
+Thermocouple comparisons use the original Analyzer mesh-index convention.
+Source snapshot and hashes preserve the exact implementation for each run.
+
+{
+  "case": "scientific",
+  "completed_utc": "2026-11-06T18:12:10.820869+00:00",
+  "git_commit": "c45b1f3153b037f0549866d5f1d981c02ba180eb",
+  "git_branch": "experiment/reference-hydrogen-properties",
+  "configuration_sha256": "3adbf363bb0855bee5dc414e6ffb8f2bd4dafe73464197940f4d0f1e6de61428",
+  "source_sha256": {
+    "heattransfer/__init__.py": "17d27fcc794623ed89dd6b4e545d1c23d34e970acf2c0897ecab1055f00e9a4c",
+    "heattransfer/analysis/__init__.py": "17d27fcc794623ed89dd6b4e545d1c23d34e970acf2c0897ecab1055f00e9a4c",
+    "heattransfer/analysis/analyzer.py": "7040081c589dfa06a2bf8fd32595544ddcaeccd5d4170612cd91e2805d374e45",
+    "heattransfer/models/__init__.py": "17d27fcc794623ed89dd6b4e545d1c23d34e970acf2c0897ecab1055f00e9a4c",
+    "heattransfer/models/coil.py": "d53a43256d1b5e6ba0edad2e8ac894b12ab548f66026f8986efe1088aadbb88b",
+    "heattransfer/models/furnace.py": "41ba83cb01efcbdf9efca727b5f3f1df686dbdb78892031f2272c42df313e2b2",
+    "heattransfer/models/material.py": "f6136a19170af74d4a1a30e8990a15e30a0409e1dc2fc1b81be63bf10e482c93",
+    "heattransfer/models/protection_gas.py": "1a9ea1bf361c327160c675d04d41de08ba20ba83b87f4bba72895d5866e29f6c",
+    "heattransfer/physics/__init__.py": "17d27fcc794623ed89dd6b4e545d1c23d34e970acf2c0897ecab1055f00e9a4c",
+    "heattransfer/physics/area/__init__.py": "17d27fcc794623ed89dd6b4e545d1c23d34e970acf2c0897ecab1055f00e9a4c",
+    "heattransfer/physics/area/area.py": "bfa43dedfca1471b6df0061101a81518506edae687bbb3b9a326c3e026306184",
+    "heattransfer/physics/area/radial.py": "fcb83cbcb276efa941141af1c10e0ca42ee155f7dbb0a7590329c1f4e5dc694e",
+    "heattransfer/physics/conduction.py": "0c544f26f80fdbef999d9c64e633a2e2ba9bf4834f12112ae9acab078c104f40",
+    "heattransfer/physics/convection.py": "60173639f6bed48ac398431d4e8366b0982511fe4fcff8bafabc5a68c980f6a1",
+    "heattransfer/physics/heat_transfer.py": "c23710b7cbcec8863e2f6d92f2a5bfcc7bd54256d04a420aab65edba13658d86",
+    "heattransfer/simulator.py": "d2e30e053e7225f5796f4ff1f506e148d764777ca5d2a8aa7dc5b84825d4a099"
+  },
+  "elapsed_seconds": 155.7709931669524,
+  "timestep_seconds": 10,
+  "duration_seconds": 127079.99999999999,
+  "material": {
+    "density": 7870.0,
+    "emissivity": 0.08554,
+    "specific_heat": null,
+    "pressure": 0,
+    "hardness": 1133.86,
+    "roughness": 3.2215e-06,
+    "conductivity": null
+  },
+  "furnace": {
+    "duration": 127079.99999999999,
+    "coil_sep_height": 0.1,
+    "convection_coefficient_side": 1,
+    "convection_coefficient_top": 1,
+    "gas_flow": 24.25,
+    "vortex_enhancement": 1.0,
+    "radiation_enhancement": 1.1,
+    "cross_sectional_area": 3.3329156461934115,
+    "radius": 1.03,
+    "height": 5.59
+  },
+  "gas_model": "ReferenceHydrogen",
+  "gas": {
+    "pressure": 101325.0,
+    "temperature_min": 273.0,
+    "temperature_max": 1100.0,
+    "table_step": 0.25,
+    "allow_extrapolation": true,
+    "_spacing": 0.25
+  },
+  "points": {
+    "9": {
+      "coil_num": 2,
+      "r": 0.309,
+      "z": 0.636,
+      "height_index": 21,
+      "radial_index": 10
+    },
+    "11": {
+      "coil_num": 1,
+      "r": 0.312,
+      "z": 0.636,
+      "height_index": 21,
+      "radial_index": 10
+    }
+  },
+  "coils": [
+    {
+      "inner_radius": 0.3025,
+      "outer_radius": 0.9185,
+      "strip_thickness": 0.00148,
+      "height": 1.272,
+      "initial_temperature": 328.15,
+      "point_separation": 0.03,
+      "surface_slope": 0.1,
+      "oxide_thickness": 1e-05,
+      "oxide_conductivity": 3.0,
+      "emulsion_correction": 0.8,
+      "coil_num": 1,
+      "mesh_shape": [
+        192,
+        42,
+        20
+      ],
+      "initial_temperature_K": 328.15
+    },
+    {
+      "inner_radius": 0.3025,
+      "outer_radius": 0.9185,
+      "strip_thickness": 0.00148,
+      "height": 1.272,
+      "initial_temperature": 328.15,
+      "point_separation": 0.03,
+      "surface_slope": 0.1,
+      "oxide_thickness": 1e-05,
+      "oxide_conductivity": 3.0,
+      "emulsion_correction": 0.8,
+      "coil_num": 2,
+      "mesh_shape": [
+        192,
+        42,
+        20
+      ],
+      "initial_temperature_K": 328.15
+    },
+    {
+      "inner_radius": 0.3025,
+      "outer_radius": 0.9185,
+      "strip_thickness": 0.00148,
+      "height": 1.272,
+      "initial_temperature": 328.15,
+      "point_separation": 0.03,
+      "surface_slope": 0.1,
+      "oxide_thickness": 1e-05,
+      "oxide_conductivity": 3.0,
+      "emulsion_correction": 0.8,
+      "coil_num": 3,
+      "mesh_shape": [
+        192,
+        42,
+        20
+      ],
+      "initial_temperature_K": 328.15
+    },
+    {
+      "inner_radius": 0.3025,
+      "outer_radius": 0.9185,
+      "strip_thickness": 0.00148,
+      "height": 1.272,
+      "initial_temperature": 328.15,
+      "point_separation": 0.03,
+      "surface_slope": 0.1,
+      "oxide_thickness": 1e-05,
+      "oxide_conductivity": 3.0,
+      "emulsion_correction": 0.8,
+      "coil_num": 4,
+      "mesh_shape": [
+        192,
+        42,
+        20
+      ],
+      "initial_temperature_K": 328.15
+    }
+  ],
+  "result_units": "seconds, kelvin; experimental input hours and Celsius",
+  "result_shapes": [
+    [
+      42,
+      20,
+      12709
+    ],
+    [
+      42,
+      20,
+      12709
+    ],
+    [
+      42,
+      20,
+      12709
+    ],
+    [
+      42,
+      20,
+      12709
+    ]
+  ],
+  "extrema_K": [
+    [
+      328.15,
+      1015.4846147196388
+    ],
+    [
+      328.15,
+      1011.4163485844962
+    ],
+    [
+      328.15,
+      1002.2743132939304
+    ],
+    [
+      328.15,
+      1011.5405086172419
+    ]
+  ],
+  "CoolProp_version": "8.0.0"
+}
+
+FROZEN CONFIGURATION
+from copy import deepcopy
+import numpy as np
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+from heattransfer.simulator import Simulator
+from heattransfer.models.furnace import Furnace
+from heattransfer.models.material import Material
+from heattransfer.models.coil import Coil
+from heattransfer.models.protection_gas import ProtectionGas
+from heattransfer.analysis.analyzer import Analyzer
+
+# Steel SPCC-PSR
+material = Material(
+    density=7870.0,
+    emissivity=0.08554, # (Yang. et al)
+    specific_heat=None, # Taylor and Wang (2017), Eq. 27
+    hardness=1133.86, # (Yang. et al)
+    roughness=3.2215e-6,
+    pressure=0
+)
+
+gas = ProtectionGas(
+   conductivity=0.1805,
+   viscosity=8.9e-6,
+   density=0.0819
+)
+
+coil = Coil(
+    material=material,
+    inner_radius=0.605 / 2,
+    outer_radius=1.837 / 2,
+    strip_thickness=1.48e-3,
+    height=0.636*2, # Yang et al.
+    point_separation=0.030,
+    initial_temperature=(273.15 + 55),
+    surface_slope=0.1,
+    oxide_thickness=10e-6, # (Yang. et al)
+    oxide_conductivity=3.0,
+    emulsion_correction=0.8
+)
+
+# Four identical coils
+coils = [coil] + [deepcopy(coil) for _ in range(3)]
+
+# Import sample temperature from file and clean it up
+gas_temp = np.genfromtxt(str(STUDY / "inputs/1#.csv"), delimiter=",")
+gas_temp = gas_temp[~np.isnan(gas_temp).any(axis=1)]
+
+
+furnace = Furnace(
+    temperature=gas_temp,
+    height=5.59, # (Zhang et. al)
+    radius=1.03, # (Zhang et. al)
+    coil_sep_height=0.10, # (Zhang et. al)
+    coils=coils,
+    gas=gas,
+    gas_flow=24.25, # 19.4 × 1.25: gas-flow sensitivity experiment
+    vortex_enhancement=1.0, # (Zhang et. al)
+    radiation_enhancement=1.1,
+)
+
+simulator = Simulator(
+    furnace = furnace, 
+    time_step = 10, 
+    simulation_time = furnace.duration
+)
+
+comparison_points = {2: {'coil_num': 4, 'r': 0.015, 'z': 0.636 * 2 - 0.001}, 3: {'coil_num': 4, 'r': coil.outer_radius - coil.inner_radius - 0.003, 'z': 0.636 * 2 - 0.001}, 5: {'coil_num': 4, 'r': coil.outer_radius - coil.inner_radius - 0.003, 'z': 0.636}, 6: {'coil_num': 3, 'r': coil.outer_radius - coil.inner_radius - 0.0045, 'z': 0.636 * 2 - 0.001}, 8: {'coil_num': 2, 'r': coil.outer_radius - coil.inner_radius - 0.0045, 'z': 0.636 * 2 - 0.001}, 9: {'coil_num': 2, 'r': 0.309, 'z': 0.636}, 11: {'coil_num': 1, 'r': 0.312, 'z': 0.636}}

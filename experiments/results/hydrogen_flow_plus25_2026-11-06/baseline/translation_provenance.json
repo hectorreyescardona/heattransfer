@@ -1,0 +1,9 @@
+{
+  "description": "English translation of archived plot labels only. Numerical simulation results and parameters are unchanged. parameters.json retains simulation-time hashes.",
+  "files": {
+    "heattransfer/analysis/analyzer.py": {
+      "original_sha256": "7040081c589dfa06a2bf8fd32595544ddcaeccd5d4170612cd91e2805d374e45",
+      "translated_sha256": "21227755fac0d960378acac509d584fe1a5e3176fc906944e3563a86578390e6"
+    }
+  }
+}
