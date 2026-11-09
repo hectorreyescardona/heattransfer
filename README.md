@@ -81,9 +81,7 @@ previous simulation results in memory have the old shape.
 Se emplea la correlación dependiente de la temperatura de Taylor y Wang (2017, ecuación 26):
 \(k_s(T) = 73.9823 - 0.0437T\), con \(T\) en kelvin y \(k_s\) en W/(m·K).
 Se evalúa a la temperatura media entre celdas para la conducción axial y a la temperatura
-local del acero en el modelo radial. Su aplicación a estos rollos es una hipótesis de modelado:
-el artículo estudia una tira de acero en un horno continuo, no propiedades medidas de SPCC.
-`Material(conductivity=None)` activa la correlación; un valor numérico conserva la opción constante.
+local del acero en el modelo radial. 
 
 ## Calor específico del acero
 
@@ -91,11 +89,7 @@ Se usa la función de Taylor y Wang (2017, ecuación 27):
 \(c_p(T) = 345 - 0.504333T + 0.004895T^2 - 9.06667\times10^{-6}T^3 + 5.5\times10^{-9}T^4\),
 con \(T\) en kelvin y \(c_p\) en J/(kg·K). `Material(specific_heat=None)`
 activa la función mediante `heat_capacity(T)`; un valor numérico mantiene el modo
-constante. Ambos notebooks activan la función. El simulador la evalúa en cada
-celda a la temperatura local del acero del paso anterior, no a la del gas.
-El ajuste interpola los datos entre 300 y 1000 K; fuera de ese intervalo se
-extrapola. Su aplicación a SPCC es una hipótesis, no una medición de ese grado.
-Reiniciar el kernel y repetir la simulación para actualizar las gráficas.
+constante. Ambos notebooks activan la función. 
 
 ## Citas
 
