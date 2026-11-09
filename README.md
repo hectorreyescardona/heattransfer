@@ -55,9 +55,9 @@ if __name__ == "__main__":
 Process startup and result transfer add overhead, so short runs may be faster serially.
 The parent process receives only compact histories; no shared-memory cleanup is needed.
 
-## Propiedades del acero
+## Steel properties
 
-Se emplea la correlación dependiente de la temperatura de Taylor y Wang (2017, ecuación 26) para el calor específico y la conductividad. Más información en `hydrogen_effect_comparison.ipynb`.
+The temperature-dependent correlations from Taylor and Wang (2017, Equations 26 and 27) are used for thermal conductivity and specific heat, respectively. See `experiments/hydrogen_effect_comparison.ipynb` for more information.
 
 
 ## References
@@ -74,32 +74,13 @@ Alfa-Tech – Quality Steel. (2026, October 21). Thermal conductivity of steel a
 Taylor, S. W., & Wang, S. (2017). Modelling steel strip heating within an annealing furnace. *Pacific Journal of Mathematics for Industry, 9*, Article 5. https://doi.org/10.1186/s40736-017-0030-7
 
 
-## Experiment: reference hydrogen properties
+## Reference hydrogen properties
 
 `ReferenceHydrogen` in `heattransfer.models.protection_gas` implements the same gas
 property interface using CoolProp HEOS: Leachman et al. (2009) density, Assael et al.
 (2011) conductivity, and Muzny et al. (2013, with the 2022 erratum) viscosity.
 Density-dependent terms are included. Install with
 `pip install -r config/requirements-properties.txt`.
-
-Tables interpolated at 0.25 K intervals avoid solving the equation of state at every
-cell and timestep. Pressure is absolute and constant, with a default of 101325 Pa.
-The current class defaults to 273–1100 K with extrapolation enabled above 1000 K.
-The experiment explicitly permits this extension because the profile exceeds 1000 K.
-Temperatures are not clipped. The original experiment retains a flow of 19.4 m³/s,
-interpreted as actual volumetric flow at furnace conditions.
-
-Results for both methods, parameters, inputs, and source snapshots are stored in
-`experiments/results/hydrogen_2026-11-06/`.
-`experiments/hydrogen_effect_comparison.ipynb` compares Thermocouples 9 and 11 without
-rerunning the simulations. `experiments/run_hydrogen_comparison.py` documents execution
-and refuses to overwrite an existing case. The experiment uses a frozen configuration
-and changes only the `furnace.gas` object between its baseline and reference runs.
-
-Saved NPZ files retain the legacy `termopar_<number>_K` keys for compatibility;
-all displayed labels use "Thermocouple". Archived source snapshots have translated
-plot labels. Each run's `translation_provenance.json` records the original and translated
-file hashes; `parameters.json` retains the original simulation-time source hashes.
 
 Leachman, J. W., Jacobsen, R. T., Penoncello, S. G., & Lemmon, E. W. (2009). Fundamental equations of state for parahydrogen, normal hydrogen, and orthohydrogen. *Journal of Physical and Chemical Reference Data, 38*(3), 721–748. https://doi.org/10.1063/1.3160306
 
