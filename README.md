@@ -1,5 +1,7 @@
 # Heat Transfer Model for Anneraling in Bell-Type Furnaces
 
+heattransfer models the thermodynamical interactions between the protection gas and the coil during an annealing process. Only convection between the p. g. and the coils was considered, disregarding radiation as argumented by Yang et al. 
+
 
 ## Project structure
 
@@ -109,3 +111,33 @@ Alfa-Tech - Stal Jakościowa. (2026, October 21). Thermal conductivity of steel 
 
 
 Taylor, S. W., & Wang, S. (2017). Modelling steel strip heating within an annealing furnace. *Pacific Journal of Mathematics for Industry, 9*, Article 5. https://doi.org/10.1186/s40736-017-0030-7
+
+
+## Experimento: propiedades de referencia del hidrógeno
+
+`ReferenceHydrogen` en `heattransfer.models.protection_gas` implementa la misma
+interfaz de propiedades del gas usando CoolProp HEOS: densidad de Leachman et al.
+(2009), conductividad de Assael et al. (2011) y viscosidad de Muzny et al. (2013,
+corrección de 2022). Se incluyen términos dependientes de densidad. Instalar con
+`pip install -r config/requirements-properties.txt`.
+
+Las tablas interpoladas cada 0.25 K evitan resolver la ecuación de estado en cada
+celda/paso. La presión es absoluta y constante; el valor por defecto es 101325 Pa.
+El intervalo por defecto es 273–1000 K. Para el experimento se permite explícitamente
+la extrapolación hasta 1100 K porque el perfil supera 1000 K. No se recortan temperaturas.
+El caudal de 19.4 se conserva como volumen real en m³/s a condiciones del horno.
+
+Los resultados de ambos métodos, parámetros, entradas y fuentes están en
+`experiments/results/hydrogen_2026-11-06/`. El notebook
+`experiments/hydrogen_effect_comparison.ipynb` compara Termopar 9 y 11 sin repetir
+las simulaciones. `experiments/run_hydrogen_comparison.py` documenta la ejecución;
+rechaza sobrescribir un caso existente. Los notebooks originales conservan su
+configuración; el experimento cambia únicamente el objeto `furnace.gas`.
+
+Leachman, J. W., Jacobsen, R. T., Penoncello, S. G., & Lemmon, E. W. (2009). Fundamental equations of state for parahydrogen, normal hydrogen, and orthohydrogen. *Journal of Physical and Chemical Reference Data, 38*(3), 721–748. https://doi.org/10.1063/1.3160306
+
+Assael, M. J., Assael, J.-A. M., Huber, M. L., Perkins, R. A., & Takata, Y. (2011). Correlation of the thermal conductivity of normal and parahydrogen from the triple point to 1000 K and up to 100 MPa. *Journal of Physical and Chemical Reference Data, 40*(3), 033101. https://doi.org/10.1063/1.3606499
+
+Muzny, C. D., Huber, M. L., & Kazakov, A. F. (2013). Correlation for the viscosity of normal hydrogen obtained from symbolic regression. *Journal of Chemical & Engineering Data, 58*(4), 969–979. https://doi.org/10.1021/je301273j
+
+Muzny, C. D., Huber, M. L., & Kazakov, A. F. (2022). Erratum: Correlation for the viscosity of normal hydrogen obtained from symbolic regression. *Journal of Chemical & Engineering Data, 67*, 2855. https://doi.org/10.1021/acs.jced.2c00523
